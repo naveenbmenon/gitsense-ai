@@ -116,27 +116,52 @@ Copy code
 
 ## 🚀 Running the Project Locally
 
-### Backend
+### Backend Setup
 
+1. Navigate to the backend directory:
+```bash
+cd backend
+```
+
+2. Install Python dependencies:
+```bash
 pip install -r requirements.txt
+```
+
+3. Start the backend server:
+```bash
 uvicorn app.main:app --reload
-Backend runs at: http://127.0.0.1:8000
-Swagger docs: http://127.0.0.1:8000/docs
----
-###Frontend
+```
+
+4. Access the backend:
+   - API: http://127.0.0.1:8000
+   - Swagger documentation: http://127.0.0.1:8000/docs
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+```bash
 cd frontend
+```
+
+2. Install dependencies:
+```bash
 npm install
+```
+
+3. Start the development server:
+```bash
 npm run dev
----
-Frontend runs at: http://localhost:5173
+```
 
-###🔮 Future Work (v2)
-Trend-based analytics
+4. Access the frontend at: http://localhost:5173
 
-Developer consistency metrics
+## 🔮 Future Work (v2)
 
-Repository health scoring
+The following features are planned for future releases:
 
-Lightweight predictive indicators
-
-Team and organization dashboards
+- **Trend-based analytics**: Track repository metrics over time
+- **Developer consistency metrics**: Measure code contribution patterns
+- **Repository health scoring**: Automated health assessments
+- **Lightweight predictive indicators**: Early warning systems for potential issues
+- **Team and organization dashboards**: Multi-repository overview and insights
