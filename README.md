@@ -117,21 +117,20 @@ Copy code
 ## 🚀 Running the Project Locally
 
 ### Backend
-```bash
+
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 Backend runs at: http://127.0.0.1:8000
 Swagger docs: http://127.0.0.1:8000/docs
-
-Frontend
-bash
-Copy code
+---
+###Frontend
 cd frontend
 npm install
 npm run dev
+---
 Frontend runs at: http://localhost:5173
 
-🔮 Future Work (v2)
+###🔮 Future Work (v2)
 Trend-based analytics
 
 Developer consistency metrics
