@@ -1,4 +1,4 @@
-const BASE_URL = "https://gitsense-ai-2-vercel.onrender.com";
+const BASE_URL = "https://gitsense-ai-2.onrender.com";
 
 if (!BASE_URL) {
   throw new Error("VITE_API_URL is not defined in production build");
