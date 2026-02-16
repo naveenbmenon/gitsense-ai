@@ -4,7 +4,7 @@ import Summary from "./components/Summary";
 import Charts from "./components/Charts";
 import Insights from "./components/Insights";
 
-const BACKEND_URL = "https://gitsense-ai-vercel.onrender.com";
+const BACKEND_URL = "https://gitsense-ai-2-vercel.onrender.com";
 
 export default function App() {
   const [user, setUser] = useState(null);
