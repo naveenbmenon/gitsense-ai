@@ -61,7 +61,8 @@ async def github_callback(code: str):
         value=jwt_token,
         httponly=True,
         secure=True,
-        samesite="none"
+        samesite="none",
+        domain="gitsense-ai-2.onrender.com"
     )
 
     return response
