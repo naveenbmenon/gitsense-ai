@@ -5,16 +5,22 @@ if (!BASE_URL) {
 }
 
 export async function fetchSummary(username) {
-  const res = await fetch(`${BASE_URL}/summary/${username}`);
+  const res = await fetch(`${BASE_URL}/summary/${username}`, {
+    credentials: "include",
+  });
   return res.json();
 }
 
 export async function fetchAnalytics(username) {
-  const res = await fetch(`${BASE_URL}/analytics/${username}`);
+  const res = await fetch(`${BASE_URL}/analytics/${username}`, {
+    credentials: "include",
+  });
   return res.json();
 }
 
 export async function fetchInsights(username) {
-  const res = await fetch(`${BASE_URL}/insights/${username}`);
+  const res = await fetch(`${BASE_URL}/insights/${username}`, {
+    credentials: "include",
+  });
   return res.json();
 }
