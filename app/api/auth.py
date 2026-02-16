@@ -57,13 +57,12 @@ async def github_callback(code: str):
 
     # HTTP-only secure cookie
     response.set_cookie(
-        key="session",
-        value=jwt_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        domain="gitsense-ai-2.onrender.com"
-    )
+    key="session",
+    value=jwt_token,
+    httponly=True,
+    secure=True,
+    samesite="none"
+)
 
     return response
 
