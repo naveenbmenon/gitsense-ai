@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Response, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import RedirectResponse
 import httpx
 import os
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
+
 
 router = APIRouter()
 
