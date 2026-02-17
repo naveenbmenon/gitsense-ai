@@ -14,20 +14,39 @@ export default function App() {
 
   // 🔐 Check login status
   useEffect(() => {
-    fetch(`${BACKEND_URL}/user/me`, {
-      credentials: "include", // IMPORTANT for cookies
+  const params = new URLSearchParams(window.location.search);
+  const tokenFromUrl = params.get("token");
+
+  if (tokenFromUrl) {
+    localStorage.setItem("jwt", tokenFromUrl);
+    window.history.replaceState({}, document.title, "/");
+  }
+
+  const token = localStorage.getItem("jwt");
+
+  if (!token) {
+    setUser(null);
+    return;
+  }
+
+  fetch(`${BACKEND_URL}/user/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Not authenticated");
+      return res.json();
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
-      })
-      .then((data) => {
-        setUser(data);
-      })
-      .catch(() => {
-        setUser(null);
-      });
-  }, []);
+    .then((data) => {
+      setUser(data);
+    })
+    .catch(() => {
+      localStorage.removeItem("jwt");
+      setUser(null);
+    });
+}, []);
+
 
   // 📊 Fetch dashboard data once user is authenticated
   useEffect(() => {

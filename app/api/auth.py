@@ -53,34 +53,29 @@ async def github_callback(code: str):
 
     jwt_token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-    response = RedirectResponse(url=FRONTEND_URL)
-
-    # HTTP-only secure cookie
-    response.set_cookie(
-    key="session",
-    value=jwt_token,
-    httponly=True,
-    secure=True,
-    samesite="lax"
-)
+    # 🔥 Redirect to frontend WITH token
+    return RedirectResponse(
+        url=f"{FRONTEND_URL}?token={jwt_token}"
+    )
 
 
-    return response
+from fastapi import Header
 
-from fastapi import Depends
-from jose import JWTError
-
-async def get_current_user(request: Request):
-    token = request.cookies.get("session")
-
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+async def get_current_user(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing token")
 
     try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid auth scheme")
+
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload["github_token"]
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid session")
+
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
 
 
 @router.get("/user/me")
