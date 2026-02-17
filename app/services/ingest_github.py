@@ -13,20 +13,18 @@ from app.services.github_client import (
 
 
 def parse_github_datetime(dt: str):
-    """
-    Converts GitHub ISO timestamp to Python datetime
-    """
     return datetime.fromisoformat(dt.replace("Z", ""))
 
 
-def ingest_user(username: str):
+def ingest_user(username: str, github_token: str):
+
     db = SessionLocal()
 
     try:
         # -----------------------------
-        # 1️⃣ USER INGESTION (IDEMPOTENT)
+        # 1️⃣ USER INGESTION
         # -----------------------------
-        user_data = get_user(username)
+        user_data = get_user(username, github_token)
 
         if "login" not in user_data:
             raise Exception(f"GitHub API error: {user_data}")
@@ -44,9 +42,10 @@ def ingest_user(username: str):
         # -----------------------------
         # 2️⃣ REPOSITORY INGESTION
         # -----------------------------
-        repos = get_repositories(username)
+        repos = get_repositories(username, github_token)
 
         for repo in repos:
+
             repo_obj = db.query(Repository).filter_by(
                 user_id=user.id,
                 repo_name=repo["name"]
@@ -66,7 +65,6 @@ def ingest_user(username: str):
                 db.commit()
                 db.refresh(repo_obj)
             else:
-                # Update mutable fields (important for future syncs)
                 repo_obj.stars = repo["stargazers_count"]
                 repo_obj.forks = repo["forks_count"]
                 repo_obj.last_pushed_at = parse_github_datetime(repo["pushed_at"])
@@ -75,7 +73,7 @@ def ingest_user(username: str):
             # -----------------------------
             # 3️⃣ COMMIT INGESTION
             # -----------------------------
-            commits = get_commits(username, repo["name"])
+            commits = get_commits(username, repo["name"], github_token)
 
             for c in commits:
                 exists = db.query(Commit).filter_by(
@@ -98,12 +96,12 @@ def ingest_user(username: str):
             # -----------------------------
             # 4️⃣ LANGUAGE INGESTION
             # -----------------------------
-            # Clear old language data (GitHub returns full snapshot)
             db.query(RepoLanguage).filter_by(
                 repo_id=repo_obj.id
             ).delete()
 
-            languages = get_languages(username, repo["name"])
+            languages = get_languages(username, repo["name"], github_token)
+
             for lang, bytes_used in languages.items():
                 lang_obj = RepoLanguage(
                     repo_id=repo_obj.id,
@@ -113,6 +111,12 @@ def ingest_user(username: str):
                 db.add(lang_obj)
 
             db.commit()
+
+        # -----------------------------
+        # 5️⃣ UPDATE LAST FETCH TIME
+        # -----------------------------
+        user.last_fetched_at = datetime.utcnow()
+        db.commit()
 
     finally:
         db.close()

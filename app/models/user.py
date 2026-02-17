@@ -8,3 +8,4 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     github_username = Column(String, unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    last_fetched_at = Column(DateTime, default=datetime.utcnow)

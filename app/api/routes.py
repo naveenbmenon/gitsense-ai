@@ -3,6 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
+from app.services.ingest_github import ingest_user
+from app.services.refresh import should_refresh
+from app.api.auth import get_current_user
+
 from app.analytics.metrics import (
     total_commits,
     commits_per_day,
@@ -66,3 +70,18 @@ def insights(username: str, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/analyze/{username}")
+def analyze_user(
+    username: str,
+    force_refresh: bool = False,
+    github_token: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter_by(
+        github_username=username
+    ).first()
+
+    if force_refresh or should_refresh(user):
+        ingest_user(username, github_token)
+
+    return {"status": "Data ready"}
