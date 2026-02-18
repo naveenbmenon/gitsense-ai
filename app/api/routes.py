@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import datetime, timedelta
 
 from app.database import get_db
 from app.models.user import User
 from app.services.ingest_github import ingest_user
 from app.services.refresh import should_refresh
 from app.api.auth import get_current_user
+from app.models.commit import Commit
+from app.models.repository import Repository
+from sqlalchemy.orm import Session
 
 from app.analytics.metrics import (
     total_commits,
@@ -85,3 +90,30 @@ def analyze_user(
         ingest_user(username, github_token)
 
     return {"status": "Data ready"}
+
+
+@router.get("/heatmap/{username}")
+def heatmap(username: str, db: Session = Depends(get_db)):
+
+    user = get_user_or_404(db, username)
+
+    one_year_ago = datetime.utcnow() - timedelta(days=365)
+
+    results = (
+        db.query(
+            func.date(Commit.commit_time).label("date"),
+            func.count(Commit.id).label("count")
+        )
+        .join(Repository, Repository.id == Commit.repo_id)
+        .filter(
+            Repository.user_id == user.id,
+            Commit.commit_time >= one_year_ago
+        )
+        .group_by(func.date(Commit.commit_time))
+        .all()
+    )
+
+    return [
+        {"date": str(r.date), "count": r.count}
+        for r in results
+    ]
