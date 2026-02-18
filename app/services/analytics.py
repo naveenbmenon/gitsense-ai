@@ -82,7 +82,8 @@ def calculate_top_language(repos):
     return counter.most_common(1)[0][0]
 
 def build_stats(user, commits, repos):
-    commit_dates = [c.commit_date for c in commits]
+    commit_dates = [c.commit_time for c in commits if c.commit_time]
+
 
     longest_streak, current_streak = calculate_streaks(commit_dates)
     peak_hour = calculate_peak_hour(commit_dates)
