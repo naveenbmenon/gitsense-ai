@@ -3,6 +3,7 @@ import { fetchSummary, fetchAnalytics, fetchInsights } from "./api";
 import Summary from "./components/Summary";
 import Charts from "./components/Charts";
 import Insights from "./components/Insights";
+import ContributionHeatmap from "./components/ContributionHeatmap";
 
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
 
@@ -192,6 +193,8 @@ export default function App() {
       </div>
 
       <Summary data={summary} />
+      <ContributionHeatmap commits={analytics.commits} />
+
 
       <Charts
         analytics={analytics}

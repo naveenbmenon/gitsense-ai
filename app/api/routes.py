@@ -58,10 +58,26 @@ def summary(username: str, db: Session = Depends(get_db)):
 def analytics(username: str, db: Session = Depends(get_db)):
     user = get_user_or_404(db, username)
 
+    # Get all commits for this user
+    commits = (
+        db.query(Commit)
+        .join(Repository)
+        .filter(Repository.user_id == user.id)
+        .all()
+    )
+
     return {
         "commits_per_day": commits_per_day(db, user.id),
         "weekend_vs_weekday": weekend_vs_weekday_commits(db, user.id),
-        "repository_activity": repository_activity(db, user.id)
+        "repository_activity": repository_activity(db, user.id),
+
+        # 🔥 ADD THIS
+        "commits": [
+            {
+                "date": c.commit_time.isoformat()
+            }
+            for c in commits
+        ]
     }
 
 
