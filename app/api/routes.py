@@ -3,6 +3,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
+from app.services.analytics import build_stats
+from app.models import Commit, Repository
+from sqlalchemy.orm import Session
+from fastapi import Depends
+
 from app.database import get_db
 from app.models.user import User
 from app.services.ingest_github import ingest_user
@@ -58,7 +63,7 @@ def summary(username: str, db: Session = Depends(get_db)):
 def analytics(username: str, db: Session = Depends(get_db)):
     user = get_user_or_404(db, username)
 
-    # Get all commits for this user
+    # 🔹 Fetch commits
     commits = (
         db.query(Commit)
         .join(Repository)
@@ -66,12 +71,26 @@ def analytics(username: str, db: Session = Depends(get_db)):
         .all()
     )
 
+    # 🔹 Fetch repos
+    repos = (
+        db.query(Repository)
+        .filter(Repository.user_id == user.id)
+        .all()
+    )
+
+    # 🔥 Build advanced stats
+    stats = build_stats(user, commits, repos)
+
     return {
+        # 🔥 NEW
+        "stats": stats,
+
+        # Existing analytics
         "commits_per_day": commits_per_day(db, user.id),
         "weekend_vs_weekday": weekend_vs_weekday_commits(db, user.id),
         "repository_activity": repository_activity(db, user.id),
 
-        # 🔥 ADD THIS
+        # Heatmap data
         "commits": [
             {
                 "date": c.commit_time.isoformat()

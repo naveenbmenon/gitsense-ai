@@ -49,35 +49,63 @@ export default function App() {
       });
   }, []);
 
-  // 📊 Fetch dashboard data once authenticated
-  useEffect(() => {
-    if (!user) return;
+ // 📊 Fetch dashboard data once authenticated
+useEffect(() => {
+  if (!user) return;
 
-    const loadData = async () => {
+  const loadData = async () => {
+    try {
       setLoading(true);
 
       const username = user.login;
       const token = localStorage.getItem("jwt");
 
-      // Trigger analyze (auto refresh if stale)
-      await fetch(`${BACKEND_URL}/analyze/${username}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      console.log("🔵 Starting data load for:", username);
 
+      console.log("➡️ Calling analyze...");
+      const analyzeRes = await fetch(
+        `${BACKEND_URL}/analyze/${username}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Analyze status:", analyzeRes.status);
+
+      if (!analyzeRes.ok) {
+        throw new Error("Analyze failed");
+      }
+
+      console.log("➡️ Fetching summary...");
       const s = await fetchSummary(username);
+      console.log("✅ Summary loaded");
+
+      console.log("➡️ Fetching analytics...");
       const a = await fetchAnalytics(username);
+      console.log("✅ Analytics loaded:", a);
+
+      console.log("➡️ Fetching insights...");
       const i = await fetchInsights(username);
+      console.log("✅ Insights loaded");
 
       setSummary(s);
       setAnalytics(a);
       setInsights(i.insights || []);
-      setLoading(false);
-    };
 
-    loadData();
-  }, [user]);
+      console.log("🟢 All data loaded successfully");
+
+    } catch (error) {
+      console.error("❌ Data load error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, [user]);
+
 
   const handleLogin = () => {
     window.location.href = `${BACKEND_URL}/auth/login`;
@@ -150,6 +178,9 @@ export default function App() {
     return <p style={{ padding: "20px" }}>Loading dashboard…</p>;
   }
 
+
+  console.log("ANALYTICS:", analytics);
+
   // ✅ Dashboard
   return (
     <div style={{ padding: "20px" }}>
@@ -193,7 +224,9 @@ export default function App() {
       </div>
 
       <Summary data={summary} />
-      <ContributionHeatmap commits={analytics.commits} />
+      {analytics?.commits && analytics.commits.length > 0 && (
+  <ContributionHeatmap commits={analytics.commits} />
+)}
 
 
       <Charts
