@@ -121,11 +121,15 @@ def analyze_user(
         github_username=username
     ).first()
 
+    rate_info = None
+
     if force_refresh or should_refresh(user):
-        ingest_user(username, github_token)
+        rate_info = ingest_user(username, github_token)
 
-    return {"status": "Data ready"}
-
+    return {
+        "status": "Data ready",
+        "rate_limit": rate_info
+    }
 
 @router.get("/heatmap/{username}")
 def heatmap(username: str, db: Session = Depends(get_db)):

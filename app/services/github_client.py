@@ -59,14 +59,13 @@ def get_user(username: str, github_token: str):
 def get_repositories(username: str, github_token: str):
     url = f"{GITHUB_API_BASE}/users/{username}/repos"
     repos, rate_limit = _fetch_all_pages(url, github_token)
-    return repos
+    return repos, rate_limit
 
 
 def get_commits(username: str, repo: str, github_token: str):
     url = f"{GITHUB_API_BASE}/repos/{username}/{repo}/commits"
     commits, rate_limit = _fetch_all_pages(url, github_token)
-    return commits
-
+    return commits, rate_limit
 
 def get_languages(username: str, repo: str, github_token: str):
     url = f"{GITHUB_API_BASE}/repos/{username}/{repo}/languages"

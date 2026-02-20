@@ -19,6 +19,7 @@ def parse_github_datetime(dt: str):
 def ingest_user(username: str, github_token: str):
 
     db = SessionLocal()
+    latest_rate_info = None
 
     try:
         # -----------------------------
@@ -42,7 +43,8 @@ def ingest_user(username: str, github_token: str):
         # -----------------------------
         # 2️⃣ REPOSITORY INGESTION
         # -----------------------------
-        repos = get_repositories(username, github_token)
+        repos, rate_info = get_repositories(username, github_token)
+        latest_rate_info = rate_info  # store latest rate info
 
         for repo in repos:
 
@@ -73,7 +75,8 @@ def ingest_user(username: str, github_token: str):
             # -----------------------------
             # 3️⃣ COMMIT INGESTION
             # -----------------------------
-            commits = get_commits(username, repo["name"], github_token)
+            commits, rate_info = get_commits(username, repo["name"], github_token)
+            latest_rate_info = rate_info  # update with latest rate info
 
             for c in commits:
                 exists = db.query(Commit).filter_by(
@@ -118,5 +121,8 @@ def ingest_user(username: str, github_token: str):
         user.last_fetched_at = datetime.utcnow()
         db.commit()
 
+        return latest_rate_info  # ✅ return rate limit info
+
     finally:
         db.close()
+        
