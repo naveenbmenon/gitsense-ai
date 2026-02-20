@@ -77,9 +77,90 @@ def calculate_top_language(repos):
     # return None to avoid crashing.
     return None
 
+
+
+
+def calculate_personality(stats: dict):
+
+    consistency_score = 0
+    momentum_score = 0
+    depth_score = 0
+    behavior_score = 0
+
+    # 🔥 Consistency
+    if stats["current_streak"] >= 14:
+        consistency_score += 3
+    elif stats["current_streak"] >= 7:
+        consistency_score += 2
+    elif stats["current_streak"] >= 3:
+        consistency_score += 1
+
+    if stats["longest_streak"] >= 30:
+        consistency_score += 2
+    elif stats["longest_streak"] >= 14:
+        consistency_score += 1
+
+    # 📈 Momentum
+    if stats["trend_percent"] >= 25:
+        momentum_score += 3
+    elif stats["trend_percent"] >= 10:
+        momentum_score += 2
+    elif stats["trend_percent"] > 0:
+        momentum_score += 1
+    elif stats["trend_percent"] < -20:
+        momentum_score -= 1
+
+    # 🚀 Depth
+    if stats["total_repos"] >= 25:
+        depth_score += 2
+    elif stats["total_repos"] >= 10:
+        depth_score += 1
+
+    if stats["total_commits"] >= 1000:
+        depth_score += 2
+    elif stats["total_commits"] >= 300:
+        depth_score += 1
+
+    # 🌙 Behavior
+    peak_hour = stats.get("peak_hour")
+
+    if peak_hour is not None:
+        if peak_hour >= 22 or peak_hour <= 3:
+            behavior_score += 1
+        elif 6 <= peak_hour <= 9:
+            behavior_score += 1
+
+    total_score = (
+        consistency_score
+        + momentum_score
+        + depth_score
+        + behavior_score
+    )
+
+    if total_score >= 8:
+        label = "Elite Consistency Architect"
+    elif total_score >= 6:
+        label = "Momentum-Driven Builder"
+    elif total_score >= 4:
+        label = "Focused Growth Developer"
+    elif total_score >= 2:
+        label = "Emerging Contributor"
+    else:
+        label = "Rebuilding Phase Explorer"
+
+    return {
+        "label": label,
+        "score": total_score,
+        "breakdown": {
+            "consistency": consistency_score,
+            "momentum": momentum_score,
+            "depth": depth_score,
+            "behavior": behavior_score
+        }
+    }
+
 def build_stats(user, commits, repos):
     commit_dates = [c.commit_time for c in commits if c.commit_time]
-
 
     longest_streak, current_streak = calculate_streaks(commit_dates)
     peak_hour = calculate_peak_hour(commit_dates)
@@ -87,7 +168,7 @@ def build_stats(user, commits, repos):
     trend_percent = calculate_monthly_trend(commit_dates)
     top_language = calculate_top_language(repos)
 
-    return {
+    stats = {
         "total_commits": len(commits),
         "total_repos": len(repos),
         "top_language": top_language,
@@ -98,4 +179,7 @@ def build_stats(user, commits, repos):
         "trend_percent": trend_percent
     }
 
+    # 🧬 Add personality classification
+    stats["personality"] = calculate_personality(stats)
 
+    return stats

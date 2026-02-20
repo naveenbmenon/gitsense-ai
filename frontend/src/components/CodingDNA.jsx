@@ -50,33 +50,10 @@ function getTrendMessage(trend) {
   return "➖ Stable month";
 }
 
-function getPersonality(stats) {
-  if (!stats) return "Unknown Developer";
-
-  let score = 0;
-
-  if (stats.current_streak >= 10) score += 3;
-  else if (stats.current_streak >= 5) score += 2;
-
-  if (stats.longest_streak >= 20) score += 2;
-
-  if (stats.trend_percent > 10) score += 2;
-  else if (stats.trend_percent < -10) score -= 1;
-
-  if (stats.peak_hour >= 22 || stats.peak_hour <= 3) score += 1;
-
-  if (stats.total_repos >= 20) score += 1;
-
-  if (score >= 6) return "🔥 Elite Consistency Machine";
-  if (score >= 4) return "⚡ Momentum Builder";
-  if (score >= 2) return "💻 Focused Creator";
-  if (score <= 0) return "🌱 Rebuilding Phase";
-
-  return "🧠 Balanced Developer";
-}
-
 export default function CodingDNA({ stats }) {
   if (!stats) return null;
+
+  const personality = stats.personality;
 
   return (
     <div className="dna-container">
@@ -118,7 +95,15 @@ export default function CodingDNA({ stats }) {
 
         <div className="dna-card personality">
           <h4>🎭 Developer Archetype</h4>
-          <p>{getPersonality(stats)}</p>
+          <p>
+            {personality?.label ?? "Unknown Developer"}
+          </p>
+
+          {personality && (
+            <small style={{ opacity: 0.7 }}>
+              Score: {personality.score}
+            </small>
+          )}
         </div>
       </div>
     </div>
