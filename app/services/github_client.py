@@ -71,3 +71,9 @@ def get_languages(username: str, repo: str, github_token: str):
     url = f"{GITHUB_API_BASE}/repos/{username}/{repo}/languages"
     data, rate_limit = _make_request(url, github_token)
     return data
+
+def get_rate_limit_remaining(github_token: str):
+    url = f"{GITHUB_API_BASE}/rate_limit"
+    data, _ = _make_request(url, github_token)
+    return data["rate"]["remaining"]
+

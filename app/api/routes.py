@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
-
+from fastapi import HTTPException
+from app.services.github_client import get_rate_limit_remaining
 from app.services.analytics import build_stats
 from app.models import Commit, Repository
 from sqlalchemy.orm import Session
@@ -110,6 +111,9 @@ def insights(username: str, db: Session = Depends(get_db)):
     }
 
 
+SAFE_THRESHOLD = 100
+
+
 @router.get("/analyze/{username}")
 def analyze_user(
     username: str,
@@ -121,7 +125,22 @@ def analyze_user(
         github_username=username
     ).first()
 
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found. Run ingestion first."
+        )
+
     rate_info = None
+
+    # 🔒 Pre-check GitHub rate limit BEFORE ingestion
+    remaining = get_rate_limit_remaining(github_token)
+
+    if remaining < SAFE_THRESHOLD:
+        raise HTTPException(
+            status_code=429,
+            detail=f"GitHub rate limit too low ({remaining}). Try later."
+        )
 
     if force_refresh or should_refresh(user):
         rate_info = ingest_user(username, github_token)
@@ -130,7 +149,6 @@ def analyze_user(
         "status": "Data ready",
         "rate_limit": rate_info
     }
-
 @router.get("/heatmap/{username}")
 def heatmap(username: str, db: Session = Depends(get_db)):
 
