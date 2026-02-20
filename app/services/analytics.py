@@ -245,8 +245,8 @@ def calculate_top_repos_last_30_days(commits, repos):
         if c.commit_time and c.commit_time >= thirty_days_ago:
             repo_counter[c.repo_id] += 1
 
-    # Map repo_id → repo name
-    repo_map = {r.id: r.name for r in repos}
+    # ✅ Map repo_id -> repo_name (correct field)
+    repo_map = {r.id: r.repo_name for r in repos}
 
     top_three = repo_counter.most_common(3)
 
@@ -257,7 +257,6 @@ def calculate_top_repos_last_30_days(commits, repos):
         }
         for repo_id, count in top_three
     ]
-
 def calculate_momentum(trend_percent: float, current_streak: int):
 
     if trend_percent >= 20 and current_streak >= 3:
