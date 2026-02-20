@@ -4,6 +4,8 @@ import Summary from "./components/Summary";
 import Charts from "./components/Charts";
 import Insights from "./components/Insights";
 import ContributionHeatmap from "./components/ContributionHeatmap";
+import StatsBar from "./components/StatsBar";
+import CodingDNA from "./components/CodingDNA";
 
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
 
@@ -223,10 +225,20 @@ useEffect(() => {
         </div>
       </div>
 
-      <Summary data={summary} />
-      {analytics?.commits && analytics.commits.length > 0 && (
-  <ContributionHeatmap commits={analytics.commits} />
+            {/* 🔥 Stats Bar */}
+      {analytics?.stats && (
+        <StatsBar stats={analytics.stats} />
+      )}
+
+      {analytics?.stats && (
+  <CodingDNA stats={analytics.stats} />
 )}
+      <Summary data={summary} />
+
+      {analytics?.commits && analytics.commits.length > 0 && (
+        <ContributionHeatmap commits={analytics.commits} />
+      )}
+
 
 
       <Charts

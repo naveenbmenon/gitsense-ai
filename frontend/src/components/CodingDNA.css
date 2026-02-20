@@ -1,0 +1,35 @@
+.dna-container {
+  margin: 40px 0;
+}
+
+.dna-container h2 {
+  margin-bottom: 20px;
+}
+
+.dna-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.dna-card {
+  background: #151515;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+.dna-card h4 {
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.dna-card p {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.personality {
+  background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
+}
