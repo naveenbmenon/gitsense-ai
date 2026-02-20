@@ -168,7 +168,7 @@ def build_stats(user, commits, repos):
     trend_percent = calculate_monthly_trend(commit_dates)
     top_language = calculate_top_language(repos)
     weekly = calculate_weekly_activity(commit_dates)
-    top_repos = calculate_top_repos_last_30_days(commits)
+    top_repos = calculate_top_repos_last_30_days(commits, repos)
     momentum = calculate_momentum(trend_percent, current_streak)
 
 
@@ -232,7 +232,7 @@ def calculate_weekly_activity(commit_dates: List[datetime]):
         "delta_percent": round(delta_percent, 2)
     }
 
-def calculate_top_repos_last_30_days(commits):
+def calculate_top_repos_last_30_days(commits, repos):
     from collections import Counter
     from datetime import datetime, timedelta
 
@@ -242,21 +242,20 @@ def calculate_top_repos_last_30_days(commits):
     repo_counter = Counter()
 
     for c in commits:
-        if not c.commit_time:
-            continue
+        if c.commit_time and c.commit_time >= thirty_days_ago:
+            repo_counter[c.repo_id] += 1
 
-        if c.commit_time >= thirty_days_ago:
-            # ✅ Use direct attribute stored in Commit model
-            repo_name = getattr(c, "repo_name", None)
-
-            if repo_name:
-                repo_counter[repo_name] += 1
+    # Map repo_id → repo name
+    repo_map = {r.id: r.name for r in repos}
 
     top_three = repo_counter.most_common(3)
 
     return [
-        {"name": name, "commits": count}
-        for name, count in top_three
+        {
+            "name": repo_map.get(repo_id, "Unknown"),
+            "commits": count
+        }
+        for repo_id, count in top_three
     ]
 
 def calculate_momentum(trend_percent: float, current_streak: int):
