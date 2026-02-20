@@ -19,25 +19,60 @@ function getDayName(index) {
     "Saturday",
     "Sunday",
   ];
-  return days[index] || "N/A";
+  return days[index] ?? "N/A";
+}
+
+function getTimeStyle(hour) {
+  if (hour === null || hour === undefined) return "Unknown";
+
+  if (hour >= 5 && hour < 11) return "🌅 Early Bird";
+  if (hour >= 11 && hour < 17) return "☀️ Daytime Builder";
+  if (hour >= 17 && hour < 22) return "🌇 Evening Coder";
+  return "🌙 Night Owl";
+}
+
+function getProductivityLevel(totalCommits) {
+  if (!totalCommits) return "Unknown";
+
+  if (totalCommits > 1000) return "🚀 Intense";
+  if (totalCommits > 500) return "🔥 High";
+  if (totalCommits > 200) return "⚡ Moderate";
+  return "🌱 Growing";
+}
+
+function getTrendMessage(trend) {
+  if (trend === null || trend === undefined) return "No data";
+
+  if (trend > 20) return `📈 Explosive growth (+${trend}%)`;
+  if (trend > 0) return `📈 Improving (+${trend}%)`;
+  if (trend < -20) return `📉 Major slowdown (${trend}%)`;
+  if (trend < 0) return `📉 Slight dip (${trend}%)`;
+  return "➖ Stable month";
 }
 
 function getPersonality(stats) {
-  if (!stats) return "Unknown";
+  if (!stats) return "Unknown Developer";
 
-  if (stats.current_streak >= 7)
-    return "🔥 Consistency Machine";
+  let score = 0;
 
-  if (stats.peak_hour >= 22 || stats.peak_hour <= 3)
-    return "🌙 Midnight Hacker";
+  if (stats.current_streak >= 10) score += 3;
+  else if (stats.current_streak >= 5) score += 2;
 
-  if (stats.favorite_day === 5 || stats.favorite_day === 6)
-    return "🏖 Weekend Warrior";
+  if (stats.longest_streak >= 20) score += 2;
 
-  if (stats.total_repos > 15)
-    return "🚀 Explorer";
+  if (stats.trend_percent > 10) score += 2;
+  else if (stats.trend_percent < -10) score -= 1;
 
-  return "💻 Focused Builder";
+  if (stats.peak_hour >= 22 || stats.peak_hour <= 3) score += 1;
+
+  if (stats.total_repos >= 20) score += 1;
+
+  if (score >= 6) return "🔥 Elite Consistency Machine";
+  if (score >= 4) return "⚡ Momentum Builder";
+  if (score >= 2) return "💻 Focused Creator";
+  if (score <= 0) return "🌱 Rebuilding Phase";
+
+  return "🧠 Balanced Developer";
 }
 
 export default function CodingDNA({ stats }) {
@@ -50,12 +85,20 @@ export default function CodingDNA({ stats }) {
       <div className="dna-grid">
         <div className="dna-card">
           <h4>🔥 Current Streak</h4>
-          <p>{stats.current_streak} days</p>
+          <p>{stats.current_streak ?? 0} days</p>
+        </div>
+
+        <div className="dna-card">
+          <h4>🏆 Longest Streak</h4>
+          <p>{stats.longest_streak ?? 0} days</p>
         </div>
 
         <div className="dna-card">
           <h4>⏰ Peak Coding Hour</h4>
-          <p>{formatHour(stats.peak_hour)}</p>
+          <p>
+            {formatHour(stats.peak_hour)} <br />
+            <small>{getTimeStyle(stats.peak_hour)}</small>
+          </p>
         </div>
 
         <div className="dna-card">
@@ -64,16 +107,17 @@ export default function CodingDNA({ stats }) {
         </div>
 
         <div className="dna-card">
-          <h4>📈 Monthly Trend</h4>
-          <p>
-            {stats.trend_percent > 0
-              ? `+${stats.trend_percent}% growth`
-              : `${stats.trend_percent}% change`}
-          </p>
+          <h4>📈 Monthly Momentum</h4>
+          <p>{getTrendMessage(stats.trend_percent)}</p>
+        </div>
+
+        <div className="dna-card">
+          <h4>⚡ Productivity Level</h4>
+          <p>{getProductivityLevel(stats.total_commits)}</p>
         </div>
 
         <div className="dna-card personality">
-          <h4>🎭 Personality</h4>
+          <h4>🎭 Developer Archetype</h4>
           <p>{getPersonality(stats)}</p>
         </div>
       </div>
