@@ -73,13 +73,9 @@ def calculate_monthly_trend(commit_dates: List[datetime]):
 
 
 def calculate_top_language(repos):
-    languages = [repo.language for repo in repos if repo.language]
-
-    if not languages:
-        return None
-
-    counter = Counter(languages)
-    return counter.most_common(1)[0][0]
+    # If repository model does not store language yet,
+    # return None to avoid crashing.
+    return None
 
 def build_stats(user, commits, repos):
     commit_dates = [c.commit_time for c in commits if c.commit_time]
