@@ -121,16 +121,6 @@ def analyze_user(
     github_token: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter_by(
-        github_username=username
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found. Run ingestion first."
-        )
-
     rate_info = None
 
     # 🔒 Pre-check GitHub rate limit BEFORE ingestion
@@ -142,13 +132,18 @@ def analyze_user(
             detail=f"GitHub rate limit too low ({remaining}). Try later."
         )
 
-    if force_refresh or should_refresh(user):
+    user = db.query(User).filter_by(
+        github_username=username
+    ).first()
+
+    if force_refresh or not user or should_refresh(user):
         rate_info = ingest_user(username, github_token)
 
     return {
         "status": "Data ready",
         "rate_limit": rate_info
     }
+
 @router.get("/heatmap/{username}")
 def heatmap(username: str, db: Session = Depends(get_db)):
 
