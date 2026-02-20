@@ -167,7 +167,7 @@ def build_stats(user, commits, repos):
     favorite_day = calculate_favorite_day(commit_dates)
     trend_percent = calculate_monthly_trend(commit_dates)
     top_language = calculate_top_language(repos)
-
+    weekly = calculate_weekly_activity(commit_dates)
     stats = {
         "total_commits": len(commits),
         "total_repos": len(repos),
@@ -176,10 +176,52 @@ def build_stats(user, commits, repos):
         "current_streak": current_streak,
         "peak_hour": peak_hour,
         "favorite_day": favorite_day,
-        "trend_percent": trend_percent
+        "trend_percent": trend_percent,
+        "weekly": weekly
     }
 
     # 🧬 Add personality classification
     stats["personality"] = calculate_personality(stats)
 
     return stats
+
+
+def calculate_weekly_activity(commit_dates: List[datetime]):
+    if not commit_dates:
+        return {
+            "commits": 0,
+            "active_days": 0,
+            "delta_percent": 0
+        }
+
+    now = datetime.utcnow()
+    seven_days_ago = now - timedelta(days=7)
+    fourteen_days_ago = now - timedelta(days=14)
+
+    this_week = []
+    last_week = []
+
+    for dt in commit_dates:
+        if dt >= seven_days_ago:
+            this_week.append(dt)
+        elif fourteen_days_ago <= dt < seven_days_ago:
+            last_week.append(dt)
+
+    this_week_count = len(this_week)
+    last_week_count = len(last_week)
+
+    active_days = len(set(d.date() for d in this_week))
+
+    if last_week_count == 0:
+        delta_percent = 100 if this_week_count > 0 else 0
+    else:
+        delta_percent = (
+            (this_week_count - last_week_count)
+            / last_week_count
+        ) * 100
+
+    return {
+        "commits": this_week_count,
+        "active_days": active_days,
+        "delta_percent": round(delta_percent, 2)
+    }
