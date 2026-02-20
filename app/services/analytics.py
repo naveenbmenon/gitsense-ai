@@ -168,6 +168,9 @@ def build_stats(user, commits, repos):
     trend_percent = calculate_monthly_trend(commit_dates)
     top_language = calculate_top_language(repos)
     weekly = calculate_weekly_activity(commit_dates)
+    top_repos = calculate_top_repos_last_30_days(commits)
+
+
     stats = {
         "total_commits": len(commits),
         "total_repos": len(repos),
@@ -177,7 +180,8 @@ def build_stats(user, commits, repos):
         "peak_hour": peak_hour,
         "favorite_day": favorite_day,
         "trend_percent": trend_percent,
-        "weekly": weekly
+        "weekly": weekly,
+        "top_repos": top_repos,
     }
 
     # 🧬 Add personality classification
@@ -225,3 +229,24 @@ def calculate_weekly_activity(commit_dates: List[datetime]):
         "active_days": active_days,
         "delta_percent": round(delta_percent, 2)
     }
+
+def calculate_top_repos_last_30_days(commits):
+    from collections import Counter
+    from datetime import datetime, timedelta
+
+    now = datetime.utcnow()
+    thirty_days_ago = now - timedelta(days=30)
+
+    repo_counter = Counter()
+
+    for c in commits:
+        if c.commit_time and c.commit_time >= thirty_days_ago:
+            repo_name = c.repository.name  # adjust if needed
+            repo_counter[repo_name] += 1
+
+    top_three = repo_counter.most_common(3)
+
+    return [
+        {"name": name, "commits": count}
+        for name, count in top_three
+    ]
