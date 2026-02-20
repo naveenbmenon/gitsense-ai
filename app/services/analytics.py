@@ -169,6 +169,7 @@ def build_stats(user, commits, repos):
     top_language = calculate_top_language(repos)
     weekly = calculate_weekly_activity(commit_dates)
     top_repos = calculate_top_repos_last_30_days(commits)
+    momentum = calculate_momentum(trend_percent, current_streak)
 
 
     stats = {
@@ -182,6 +183,7 @@ def build_stats(user, commits, repos):
         "trend_percent": trend_percent,
         "weekly": weekly,
         "top_repos": top_repos,
+        "momentum": momentum,
     }
 
     # 🧬 Add personality classification
@@ -240,9 +242,15 @@ def calculate_top_repos_last_30_days(commits):
     repo_counter = Counter()
 
     for c in commits:
-        if c.commit_time and c.commit_time >= thirty_days_ago:
-            repo_name = c.repository.name  # adjust if needed
-            repo_counter[repo_name] += 1
+        if not c.commit_time:
+            continue
+
+        if c.commit_time >= thirty_days_ago:
+            # ✅ Use direct attribute stored in Commit model
+            repo_name = getattr(c, "repo_name", None)
+
+            if repo_name:
+                repo_counter[repo_name] += 1
 
     top_three = repo_counter.most_common(3)
 
@@ -250,3 +258,30 @@ def calculate_top_repos_last_30_days(commits):
         {"name": name, "commits": count}
         for name, count in top_three
     ]
+
+def calculate_momentum(trend_percent: float, current_streak: int):
+
+    if trend_percent >= 20 and current_streak >= 3:
+        return {
+            "label": "On Fire",
+            "category": "high"
+        }
+
+    elif trend_percent >= 5:
+        return {
+            "label": "Rising",
+            "category": "medium"
+        }
+
+    elif -5 <= trend_percent < 5:
+        return {
+            "label": "Stable",
+            "category": "neutral"
+        }
+
+    else:
+        return {
+            "label": "Cooling Down",
+            "category": "low"
+        }
+    
