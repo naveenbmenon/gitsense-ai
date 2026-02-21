@@ -108,12 +108,9 @@ export default function App() {
     setLoading(false);
   };
 
-  // ... (keep all your imports and useEffect logic exactly the same)
-
   if (!user) {
     return (
       <div className="center-screen">
-        <h1>GitSense AI</h1>
         <button className="primary-btn" onClick={handleLogin}>
           Login with GitHub
         </button>
@@ -122,18 +119,18 @@ export default function App() {
   }
 
   if (loading || !summary || !analytics) {
-    return <div className="loading-state">Analyzing GitHub matrix... 🔮</div>;
+    return <p>Loading dashboard…</p>;
   }
 
   const stats = analytics.stats;
 
   return (
-    <div className="app-container">
+    <div>
       <div className="header">
         <h1>GitSense AI Dashboard</h1>
         <div className="header-actions">
           <span>
-            Logged in as <strong style={{color: "white"}}>{user.login}</strong>
+            Logged in as <strong>{user.login}</strong>
           </span>
           <button onClick={handleRefresh}>🔄 Refresh</button>
           <button onClick={handleLogout}>Logout</button>
@@ -150,10 +147,8 @@ export default function App() {
           {/* Weekly Activity */}
           <div className="card-enhanced">
             <h3>This Week</h3>
-            <p style={{fontSize: "28px", fontWeight: "700", color: "#fff"}}>
-              {stats.weekly.commits} <span style={{fontSize:"14px", color:"#a1a1aa"}}>commits</span>
-            </p>
-            <p style={{fontSize: "14px", color: "#a1a1aa"}}>{stats.weekly.active_days} active days</p>
+            <p><strong>{stats.weekly.commits}</strong> commits</p>
+            <p>{stats.weekly.active_days} active days</p>
 
             <p
               className={
@@ -165,25 +160,25 @@ export default function App() {
               }
             >
               {stats.weekly.delta_percent > 0 ? "↑" : "↓"}{" "}
-              {Math.abs(stats.weekly.delta_percent)}% vs last week
+              {Math.abs(stats.weekly.delta_percent)}%
             </p>
           </div>
 
           {/* Momentum */}
           <div className={`card-enhanced momentum ${stats.momentum.category}`}>
             <h3>Momentum</h3>
-            <p style={{fontSize: "24px", fontWeight: "600", color: "#fff"}}>{stats.momentum.label}</p>
+            <p>{stats.momentum.label}</p>
           </div>
 
           {/* Top Repositories */}
           <div className="card-enhanced">
             <h3>Top Repositories (30 days)</h3>
             {stats.top_repos.length === 0 ? (
-              <p style={{color: "var(--text-secondary)", fontSize: "14px"}}>No recent activity</p>
+              <p>No recent activity</p>
             ) : (
               stats.top_repos.map((repo, index) => (
                 <div key={index} className="repo-row">
-                  <span style={{fontWeight: "500", color: "#fff"}}>{repo.name}</span>
+                  <span>{repo.name}</span>
                   <span>{repo.commits} commits</span>
                 </div>
               ))
