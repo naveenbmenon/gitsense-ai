@@ -3,7 +3,7 @@ import Header from "./components/layout/Header";
 import { fetchSummary, fetchAnalytics, fetchInsights } from "./api";
 import ActivitySection from "./components/layout/ActivitySection";
 import Summary from "./components/Summary";
-
+import ChartsSection from "./components/layout/ChartsSection";
 import Charts from "./components/Charts";
 
 import Insights from "./components/Insights";
@@ -276,25 +276,7 @@ export default function App() {
 
       <Summary data={summary} />
 
-
-
-      {analytics?.commits?.length > 0 && (
-
-        <ContributionHeatmap commits={analytics.commits} />
-
-      )}
-
-
-
-      <Charts
-
-        analytics={analytics}
-
-        languages={summary.language_distribution}
-
-      />
-
-
+      <ChartsSection analytics={analytics} summary={summary} />
 
       <Insights insights={insights} />
 
