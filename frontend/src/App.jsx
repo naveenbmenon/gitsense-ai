@@ -5,7 +5,7 @@ import ActivitySection from "./components/layout/ActivitySection";
 import Summary from "./components/Summary";
 import ChartsSection from "./components/layout/ChartsSection";
 import Charts from "./components/Charts";
-
+import InsightsSection from "./components/layout/InsightsSection";
 import Insights from "./components/Insights";
 
 import ContributionHeatmap from "./components/ContributionHeatmap";
@@ -278,7 +278,7 @@ export default function App() {
 
       <ChartsSection analytics={analytics} summary={summary} />
 
-      <Insights insights={insights} />
+      <InsightsSection insights={insights} />
 
     </div>
 
