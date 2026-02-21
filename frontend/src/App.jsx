@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import Header from "./components/layout/Header";
 import { fetchSummary, fetchAnalytics, fetchInsights } from "./api";
 
 import Summary from "./components/Summary";
@@ -14,7 +14,7 @@ import StatsBar from "./components/StatsBar";
 
 import CodingDNA from "./components/CodingDNA";
 
-
+import "./index.css";
 
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
 
@@ -253,27 +253,13 @@ export default function App() {
 
   return (
 
-    <div>
+    <div className="max-w-7xl mx-auto px-6 py-10">
 
-      <div className="header">
-
-        <h1>GitSense AI Dashboard</h1>
-
-        <div className="header-actions">
-
-          <span>
-
-            Logged in as <strong>{user.login}</strong>
-
-          </span>
-
-          <button onClick={handleRefresh}>🔄 Refresh</button>
-
-          <button onClick={handleLogout}>Logout</button>
-
-        </div>
-
-      </div>
+      <Header
+  user={user}
+  onRefresh={handleRefresh}
+  onLogout={handleLogout}
+/>
 
 
 
