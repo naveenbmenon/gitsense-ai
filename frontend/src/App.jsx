@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "./components/layout/Header";
 import { fetchSummary, fetchAnalytics, fetchInsights } from "./api";
-
+import ActivitySection from "./components/layout/ActivitySection";
 import Summary from "./components/Summary";
 
 import Charts from "./components/Charts";
@@ -271,98 +271,7 @@ export default function App() {
 
       {/* 🔥 NEW SECTION */}
 
-      {stats && (
-
-        <div className="dashboard-grid">
-
-
-
-          {/* Weekly Activity */}
-
-          <div className="card-enhanced">
-
-            <h3>This Week</h3>
-
-            <p><strong>{stats.weekly.commits}</strong> commits</p>
-
-            <p>{stats.weekly.active_days} active days</p>
-
-
-
-            <p
-
-              className={
-
-                stats.weekly.delta_percent > 0
-
-                  ? "positive"
-
-                  : stats.weekly.delta_percent < 0
-
-                  ? "negative"
-
-                  : "neutral"
-
-              }
-
-            >
-
-              {stats.weekly.delta_percent > 0 ? "↑" : "↓"}{" "}
-
-              {Math.abs(stats.weekly.delta_percent)}%
-
-            </p>
-
-          </div>
-
-
-
-          {/* Momentum */}
-
-          <div className={`card-enhanced momentum ${stats.momentum.category}`}>
-
-            <h3>Momentum</h3>
-
-            <p>{stats.momentum.label}</p>
-
-          </div>
-
-
-
-          {/* Top Repositories */}
-
-          <div className="card-enhanced">
-
-            <h3>Top Repositories (30 days)</h3>
-
-            {stats.top_repos.length === 0 ? (
-
-              <p>No recent activity</p>
-
-            ) : (
-
-              stats.top_repos.map((repo, index) => (
-
-                <div key={index} className="repo-row">
-
-                  <span>{repo.name}</span>
-
-                  <span>{repo.commits} commits</span>
-
-                </div>
-
-              ))
-
-            )}
-
-          </div>
-
-
-
-        </div>
-
-      )}
-
+      <ActivitySection stats={stats} />
 
 
       <Summary data={summary} />
