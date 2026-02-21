@@ -253,7 +253,8 @@ export default function App() {
 
   return (
 
-    <div className="max-w-7xl mx-auto px-6 py-10">
+    <div className="bg-zinc-950 min-h-screen text-zinc-100">
+    <div className="max-w-7xl mx-auto px-6 py-12">
 
       <Header
   user={user}
@@ -281,6 +282,7 @@ export default function App() {
       <InsightsSection insights={insights} />
 
     </div>
+  </div>
 
   );
 
