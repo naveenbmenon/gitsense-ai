@@ -1,86 +1,250 @@
-body {
-  background-color: #0f172a;
-  color: #f1f5f9;
-  font-family: system-ui, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-main: #09090b;
+  --bg-card: #18181b;
+  --bg-card-hover: #27272a;
+  --border-color: #3f3f46;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --accent-gradient: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  --accent-glow: rgba(168, 85, 247, 0.4);
 }
 
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+/* Header */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
+/* Buttons */
 button {
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  border: none;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: var(--bg-card-hover);
+  border-color: #52525b;
 }
 
 .primary-btn {
-  background: black;
+  background: var(--accent-gradient);
   color: white;
-  padding: 12px 24px;
+  border: none;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px var(--accent-glow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+  background: var(--bg-card);
+}
+
+/* Login Screen */
 .center-screen {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
 }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+.center-screen h1 {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 48px;
   margin-bottom: 30px;
 }
 
+/* Enhanced Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
 .card-enhanced {
-  background: #1e293b;
-  padding: 18px;
-  border-radius: 12px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.3);
+  background: var(--bg-card);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.card-enhanced:hover {
+  transform: translateY(-4px);
+  border-color: #52525b;
+}
+
+.card-enhanced h3 {
+  margin-top: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.card-enhanced p {
+  font-size: 18px;
+  margin: 8px 0;
 }
 
 .repo-row {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+}
+.repo-row:last-child {
+  border-bottom: none;
+}
+.repo-row span:last-child {
+  color: var(--text-secondary);
 }
 
-.positive {
-  color: #22c55e;
+/* Status Colors */
+.positive { color: #34d399; font-weight: 600; }
+.negative { color: #f87171; font-weight: 600; }
+.neutral { color: var(--text-secondary); font-weight: 600; }
+
+.momentum { position: relative; overflow: hidden; }
+.momentum::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; width: 4px;
+}
+.momentum.high::before { background: #34d399; }
+.momentum.medium::before { background: #60a5fa; }
+.momentum.neutral::before { background: var(--text-secondary); }
+.momentum.low::before { background: #f87171; }
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  font-size: 18px;
+  color: var(--text-secondary);
+  animation: pulse 1.5s infinite ease-in-out;
 }
 
-.negative {
-  color: #ef4444;
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
 }
 
-.neutral {
-  color: #94a3b8;
+/* =========================================
+   React Calendar Heatmap Custom Overrides
+   ========================================= */
+
+/* Text labels (months and days) */
+.react-calendar-heatmap text {
+  font-size: 11px;
+  fill: var(--text-secondary);
+  font-weight: 500;
 }
 
-.momentum.high {
-  border-left: 4px solid #22c55e;
+/* The squares themselves */
+.react-calendar-heatmap rect {
+  /* Make them slightly rounded */
+  rx: 2px;
+  ry: 2px;
+  /* Add a tiny border matching the card background to separate them cleanly */
+  stroke: var(--bg-card);
+  stroke-width: 2px;
+  transition: all 0.2s ease;
 }
 
-.momentum.medium {
-  border-left: 4px solid #3b82f6;
+/* Hover effect on individual squares */
+.react-calendar-heatmap rect:hover {
+  stroke: #fff;
+  stroke-width: 1px;
+  opacity: 0.8;
 }
 
-.momentum.neutral {
-  border-left: 4px solid #94a3b8;
+/* THE NEON COLOR SCALE 
+   Matching the 'positive' green vibe (#34d399) defined earlier
+*/
+
+/* Empty state (no commits) - subtle dark gray slot */
+.react-calendar-heatmap .color-empty {
+  fill: rgba(255, 255, 255, 0.04);
 }
 
-.momentum.low {
-  border-left: 4px solid #ef4444;
+/* Scale 1: Low activity (Deep teal/green) */
+.react-calendar-heatmap .color-scale-1 {
+  fill: #064e3b; 
 }
+
+/* Scale 2: Medium-low activity */
+.react-calendar-heatmap .color-scale-2 {
+  fill: #059669;
+}
+
+/* Scale 3: Medium-high activity (Bright emerald) */
+.react-calendar-heatmap .color-scale-3 {
+  fill: #10b981;
+}
+
+/* Scale 4: High activity (Neon Green) */
+.react-calendar-heatmap .color-scale-4 {
+  fill: #34d399;
+}
+

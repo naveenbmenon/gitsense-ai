@@ -1,110 +1,142 @@
-import React from "react";
-import "./CodingDNA.css";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
+} from "chart.js";
 
-function formatHour(hour) {
-  if (hour === null || hour === undefined) return "N/A";
+import { Line, Bar, Pie } from "react-chartjs-2";
 
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const formatted = hour % 12 || 12;
-  return `${formatted} ${ampm}`;
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
+);
+
+// Global default color for dark mode charts
+ChartJS.defaults.color = "#a1a1aa";
+ChartJS.defaults.font.family = "'Inter', sans-serif";
+
+const commonOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: "#f4f4f5" } },
+  },
+  scales: {
+    x: { grid: { display: false }, ticks: { color: "#a1a1aa" } },
+    y: { grid: { color: "#27272a" }, ticks: { color: "#a1a1aa" } }
+  }
+};
+
+export default function Charts({ analytics, languages }) {
+  return (
+    <div style={{ marginTop: "40px" }}>
+      <h2 style={{ fontSize: "20px", marginBottom: "20px", color: "#fff" }}>📊 Analytics</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "30px" }}>
+        <CommitsPerDayChart data={analytics.commits_per_day} />
+        <WeekendWeekdayChart data={analytics.weekend_vs_weekday} />
+        <LanguageChart data={languages} />
+      </div>
+    </div>
+  );
 }
 
-function getDayName(index) {
-  const days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-  return days[index] ?? "N/A";
-}
-
-function getTimeStyle(hour) {
-  if (hour === null || hour === undefined) return "Unknown";
-
-  if (hour >= 5 && hour < 11) return "🌅 Early Bird";
-  if (hour >= 11 && hour < 17) return "☀️ Daytime Builder";
-  if (hour >= 17 && hour < 22) return "🌇 Evening Coder";
-  return "🌙 Night Owl";
-}
-
-function getProductivityLevel(totalCommits) {
-  if (!totalCommits) return "Unknown";
-
-  if (totalCommits > 1000) return "🚀 Intense";
-  if (totalCommits > 500) return "🔥 High";
-  if (totalCommits > 200) return "⚡ Moderate";
-  return "🌱 Growing";
-}
-
-function getTrendMessage(trend) {
-  if (trend === null || trend === undefined) return "No data";
-
-  if (trend > 20) return `📈 Explosive growth (+${trend}%)`;
-  if (trend > 0) return `📈 Improving (+${trend}%)`;
-  if (trend < -20) return `📉 Major slowdown (${trend}%)`;
-  if (trend < 0) return `📉 Slight dip (${trend}%)`;
-  return "➖ Stable month";
-}
-
-export default function CodingDNA({ stats }) {
-  if (!stats) return null;
-
-  const personality = stats.personality;
+function CommitsPerDayChart({ data }) {
+  const labels = Object.keys(data);
+  const values = Object.values(data);
 
   return (
-    <div className="dna-container">
-      <h2>🧬 Coding DNA</h2>
+    <div className="card-enhanced" style={{ height: "350px", display: "flex", flexDirection: "column" }}>
+      <h3 style={{ marginBottom: "20px" }}>Commits per Day</h3>
+      <div style={{ flex: 1 }}>
+        <Line
+          options={{ ...commonOptions, tension: 0.4 }}
+          data={{
+            labels,
+            datasets: [{
+              label: "Commits",
+              data: values,
+              borderColor: "#8b5cf6",
+              backgroundColor: "rgba(139, 92, 246, 0.5)",
+              borderWidth: 3,
+              pointBackgroundColor: "#09090b",
+              pointBorderColor: "#8b5cf6",
+              pointBorderWidth: 2,
+              pointRadius: 4,
+            }]
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
-      <div className="dna-grid">
-        <div className="dna-card">
-          <h4>🔥 Current Streak</h4>
-          <p>{stats.current_streak ?? 0} days</p>
-        </div>
+function WeekendWeekdayChart({ data }) {
+  const labels = ["Weekday", "Weekend"];
+  const values = [data.weekday, data.weekend];
 
-        <div className="dna-card">
-          <h4>🏆 Longest Streak</h4>
-          <p>{stats.longest_streak ?? 0} days</p>
-        </div>
+  return (
+    <div className="card-enhanced" style={{ height: "350px", display: "flex", flexDirection: "column" }}>
+      <h3 style={{ marginBottom: "20px" }}>Weekday vs Weekend</h3>
+      <div style={{ flex: 1 }}>
+        <Bar
+          options={{
+            ...commonOptions,
+            scales: {
+              ...commonOptions.scales,
+              x: { grid: { display: false } }
+            }
+          }}
+          data={{
+            labels,
+            datasets: [{
+              label: "Commits",
+              data: values,
+              backgroundColor: ["#3b82f6", "#10b981"],
+              borderRadius: 8,
+            }]
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
-        <div className="dna-card">
-          <h4>⏰ Peak Coding Hour</h4>
-          <p>
-            {formatHour(stats.peak_hour)} <br />
-            <small>{getTimeStyle(stats.peak_hour)}</small>
-          </p>
-        </div>
+function LanguageChart({ data }) {
+  const labels = Object.keys(data);
+  const values = Object.values(data);
 
-        <div className="dna-card">
-          <h4>📅 Favorite Coding Day</h4>
-          <p>{getDayName(stats.favorite_day)}</p>
-        </div>
-
-        <div className="dna-card">
-          <h4>📈 Monthly Momentum</h4>
-          <p>{getTrendMessage(stats.trend_percent)}</p>
-        </div>
-
-        <div className="dna-card">
-          <h4>⚡ Productivity Level</h4>
-          <p>{getProductivityLevel(stats.total_commits)}</p>
-        </div>
-
-        <div className="dna-card personality">
-          <h4>🎭 Developer Archetype</h4>
-          <p>
-            {personality?.label ?? "Unknown Developer"}
-          </p>
-
-          {personality && (
-            <small style={{ opacity: 0.7 }}>
-              Score: {personality.score}
-            </small>
-          )}
-        </div>
+  return (
+    <div className="card-enhanced" style={{ height: "350px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <h3 style={{ marginBottom: "20px", alignSelf: "flex-start" }}>Language Distribution</h3>
+      <div style={{ flex: 1, width: "100%", maxWidth: "300px" }}>
+        <Pie
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: "#f4f4f5", padding: 20 } } }
+          }}
+          data={{
+            labels,
+            datasets: [{
+              data: values,
+              backgroundColor: ["#6366f1", "#ec4899", "#8b5cf6", "#14b8a6", "#f59e0b"],
+              borderColor: "#18181b",
+              borderWidth: 3,
+            }]
+          }}
+        />
       </div>
     </div>
   );

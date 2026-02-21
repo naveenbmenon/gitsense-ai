@@ -1,9 +1,24 @@
 import CalendarHeatmap from "react-calendar-heatmap";
-import "react-calendar-heatmap/dist/styles.css";
+
+// Helper function to assign CSS classes based on commit count intensity
+const getScaleClass = (value) => {
+  if (!value || value.count === 0) {
+    return "color-empty";
+  }
+  // Adjust these thresholds based on how active your typical user is
+  if (value.count <= 2) return "color-scale-1";
+  if (value.count <= 5) return "color-scale-2";
+  if (value.count <= 9) return "color-scale-3";
+  return "color-scale-4"; // 10+ commits
+};
 
 export default function ContributionHeatmap({ commits }) {
   if (!commits || commits.length === 0) {
-    return <p>No commit data available</p>;
+    return (
+      <div className="card-enhanced" style={{ marginBottom: "40px" }}>
+        <p style={{ color: "var(--text-secondary)" }}>No commit data available</p>
+      </div>
+    );
   }
 
   const heatmapData = commits.reduce((acc, commit) => {
@@ -24,13 +39,19 @@ export default function ContributionHeatmap({ commits }) {
   startDate.setFullYear(startDate.getFullYear() - 1);
 
   return (
-    <div style={{ marginBottom: "40px" }}>
-      <h3>Contribution Activity</h3>
-      <CalendarHeatmap
-        startDate={startDate}
-        endDate={endDate}
-        values={heatmapData}
-      />
+    <div className="card-enhanced" style={{ marginBottom: "40px" }}>
+      <h3 style={{ color: "#fff", marginBottom: "20px" }}>
+        Contribution Activity (Past Year)
+      </h3>
+      <div style={{ overflowX: "auto" }}> {/* Ensures it doesn't break layout on small screens */}
+        <CalendarHeatmap
+          startDate={startDate}
+          endDate={endDate}
+          values={heatmapData}
+          classForValue={getScaleClass}
+          showWeekdayLabels={true}
+        />
+      </div>
     </div>
   );
 }
