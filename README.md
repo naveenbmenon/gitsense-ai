@@ -1,99 +1,308 @@
-# GitSense AI
 
-A full-stack GitHub analytics platform that transforms raw GitHub activity into structured analytics and explainable developer insights.
+# 🧠 GitSense AI
 
-## Problem
+### AI-Powered GitHub Developer Intelligence Platform
 
-GitHub exposes vast amounts of raw activity data — commits, repositories, languages — but provides no interpretation layer. Developers have no easy way to understand their contribution patterns, identify inactive repositories, or track technology trends over time.
+*Transform raw GitHub activity into structured behavioral analytics.*
 
-## Solution
+[![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://gitsense-ai-dashboard.vercel.app/)
+[![GitHub](https://img.shields.io/badge/source-code-blue?style=for-the-badge&logo=github)](https://github.com/naveenbmenon/gitsense-ai)
 
-GitSense AI ingests GitHub activity via authenticated APIs, normalizes it into a relational schema, computes reusable analytics metrics, and generates deterministic, explainable insights — all exposed through a REST API and a React dashboard.
 
-## Architecture
+[Live Demo](https://gitsense-ai-dashboard.vercel.app/) • [API Docs](https://gitsense-ai-2.onrender.com) 
+
+
+---
+
+## 📸 Preview
+
+### Landing Page
+![GitSense Landing Page](./screenshots/landing.png)
+
+### Analytics Dashboard
+![Analytics Dashboard](./screenshots/dashboard.png)
+
+### Contribution Heatmap
+![365-Day Heatmap](./screenshots/heatmap.png)
+
+---
+
+## 🎯 What is GitSense?
+
+GitSense AI is a **full-stack SaaS-style platform** that analyzes GitHub developer activity and transforms it into structured, explainable analytics.
+
+It provides:
+
+* 🔐 Secure GitHub OAuth authentication
+* 📊 Backend-driven analytics computation
+* 📈 Contribution trend visualization
+* 🧠 Deterministic behavioral insights
+* ⚡ Load-tested deployed infrastructure
+
+GitSense is not a static stats viewer — all analytics logic runs server-side.
+
+---
+
+## 🏗️ System Architecture
 
 ```
-GitHub REST API
-      ↓
-Data Ingestion Layer
-      ↓
-SQLite Database (SQLAlchemy ORM)
-      ↓
-Analytics Engine
-      ↓
-Insight Engine
-      ↓
-FastAPI REST APIs
-      ↓
-React Dashboard (Chart.js)
+User → GitHub OAuth → FastAPI Backend (Render) → SQLite Database
+                              ↓
+                      Analytics Engine
+                              ↓
+                      Insight Engine
+                              ↓
+                        JWT-Protected APIs
+                              ↓
+                  React Dashboard (Vercel)
 ```
 
-## Core Features
+---
 
-**Data Ingestion**
-- Authenticated GitHub REST API integration
-- Ingests users, repositories, commits, and language data
-- Idempotent pipeline — safe to re-run without duplication
+## 🛠 Tech Stack
 
-**Analytics Engine**
-- Commit time series (commits per day)
-- Weekday vs weekend activity breakdown
-- Active vs inactive repository classification
-- Language distribution by percentage
+* **Backend:** FastAPI (Python), SQLAlchemy ORM
+* **Database:** SQLite (portable to PostgreSQL)
+* **Frontend:** React + Vite + Tailwind CSS
+* **Auth:** GitHub OAuth 2.0 + JWT
+* **Charts:** Chart.js
+* **Deployment:** Render (backend) + Vercel (frontend)
+* **Load Testing:** Locust
 
-**Insight Engine**
-- Rule-based, deterministic insight generation (no black-box ML)
-- Detects high weekend activity, inactive repositories, and dominant language concentration
-- Insights are fully explainable and traceable to source data
+---
 
-**API Layer**
-- Built with FastAPI
-- Endpoints: `/health`, `/summary/{username}`, `/analytics/{username}`, `/insights/{username}`
-- Swagger/OpenAPI docs available at `/docs`
+## 🔐 Authentication Flow
 
-**Dashboard**
-- React (Vite) frontend with Chart.js visualizations
-- Insight cards rendered directly from backend API responses
-- Frontend contains zero business logic — all computation is backend-driven
+1. User clicks "Login with GitHub"
+2. Redirect to GitHub OAuth
+3. GitHub returns authorization code
+4. Backend exchanges code for access token
+5. Backend generates JWT
+6. Frontend stores JWT
+7. All protected APIs require `Authorization: Bearer <jwt>`
 
-## Tech Stack
+Rate limiting is enforced on API routes.
 
-| Layer | Technology |
-|---|---|
-| Backend | Python, FastAPI, SQLAlchemy |
-| Database | SQLite |
-| Frontend | React (Vite), Chart.js |
-| External API | GitHub REST API |
+---
 
-## Running Locally
+## 📊 Analytics Engine
 
-**Backend**
+Backend computes structured metrics including:
+
+* Commits per day (time series)
+* 365-day contribution heatmap data
+* Weekend vs weekday activity ratio
+* Repository activity breakdown
+* Active vs inactive repository detection
+* Language distribution percentages
+* Contribution consistency signals
+
+All computation runs server-side.
+
+Large responses are handled via **pagination**.
+
+---
+
+## 🧠 Insight Engine
+
+GitSense uses a deterministic, rule-based insight system to generate explainable developer insights:
+
+* Detects unusually high weekend activity
+* Flags inactive repositories
+* Identifies dominant language concentration
+* Highlights contribution frequency patterns
+
+No black-box ML models are used.
+
+---
+
+## 🔄 Data Ingestion Pipeline
+
+```
+1. User triggers /analyze/{username}
+   ↓
+2. Backend checks last_fetched_at
+   ↓
+3. If stale → fetch fresh data from GitHub
+   ↓
+4. GitHub API calls (paginated, 100 per page)
+   ↓
+5. Idempotent insert/update into database
+   ↓
+6. Update last_fetched_at timestamp
+   ↓
+7. Return analytics via JWT-protected API
+```
+
+### Key Engineering Decisions
+
+* Idempotent ingestion (no duplicate commits)
+* Normalized relational schema
+* Clear separation of ingestion vs analytics
+* Backend-driven logic (no business logic in frontend)
+
+---
+
+## 📈 Performance Metrics
+
+Load tested using **Locust** against deployed backend.
+
+### Observed Results
+
+| Concurrent Users | Avg Latency | Failure Rate |
+|------------------|-------------|--------------|
+| 10               | ~300ms      | 0%           |
+| 25               | ~336ms      | 0%           |
+| 50               | 8–10s avg   | 0%           |
+
+### Observations
+
+* System remains stable under concurrency
+* No request failures observed
+* Latency increases at higher concurrency due to synchronous analytics computation and SQLite contention
+* Tail latency observed at higher percentiles under load
+
+These findings inform future optimizations (caching, precomputation, DB migration).
+
+---
+
+## 🗄 Database Schema
+
+```
+User
+├── id (PK)
+├── github_username (UNIQUE)
+├── github_token
+└── last_fetched_at
+
+Repository
+├── id (PK)
+├── name
+├── user_id (FK → User.id)
+├── primary_language
+└── language_stats (JSON)
+
+Commit
+├── id (PK)
+├── commit_time
+└── repository_id (FK → Repository.id)
+```
+
+### Design Principles
+
+* Normalized relational modeling
+* Foreign key relationships
+* Query-friendly structure
+* Portable to PostgreSQL for horizontal scaling
+
+---
+
+## 🔌 API Endpoints
+
+### Authentication
+```
+GET  /auth/login              # Initiate GitHub OAuth
+GET  /auth/callback           # OAuth callback handler
+GET  /user/me                 # Current user info (JWT required)
+```
+
+### Analytics
+```
+GET  /analytics/{username}    # Full analytics (JWT required)
+GET  /insights/{username}     # Behavioral insights (JWT required)
+GET  /analyze/{username}      # Trigger data refresh (JWT required)
+GET  /summary/{username}      # Summary stats (JWT required)
+```
+
+### System
+```
+GET  /health                  # Health check
+GET  /docs                    # OpenAPI documentation
+```
+
+All analytics endpoints require JWT authentication.
+
+---
+
+## 🚀 Roadmap
+
+### Phase 1 (Complete) ✅
+* OAuth 2.0 authentication
+* Idempotent ingestion pipeline
+* Backend analytics engine
+* 365-day heatmap
+* Load testing validation
+* Rate limiting
+* Pagination
+* Production deployment
+
+### Phase 2 (Planned) 📋
+* Redis caching layer
+* Precomputed analytics storage
+* Public shareable profiles (`/u/{username}`)
+* Developer Momentum Score
+* PostgreSQL migration
+
+### Phase 3 (Future) 🔮
+* Background job processing
+* Advanced developer scoring metrics
+* Organization-level dashboards
+* Performance optimization layer
+
+---
+
+## 🧪 Running Locally
+
+### Backend
+
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload
-# API: http://127.0.0.1:8000
-# Docs: http://127.0.0.1:8000/docs
 ```
 
-**Frontend**
+**API:** http://localhost:8000  
+**Docs:** http://localhost:8000/docs
+
+### Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
-# App: http://localhost:5173
 ```
 
-## Key Engineering Decisions
+**App:** http://localhost:5173
 
-- **Idempotent ingestion** — pipeline can be re-triggered without corrupting existing data
-- **Backend-driven insights** — all analytics logic lives server-side; frontend is purely presentational
-- **Normalized schema** — raw API responses are cleaned and stored relationally for efficient querying
-- **Rule-based insight engine** — deterministic rules ensure insights are auditable and explainable
+---
 
-## Planned Improvements
 
-- Trend-based analytics over time
-- Developer consistency scoring
-- Repository health scoring system
-- Multi-user and organization dashboards
+## 👤 Author
+
+**Naveen Bijulal Menon**
+
+* GitHub: [@naveenbmenon](https://github.com/naveenbmenon)
+* Email: naveenbijulalmenon@gmail.com
+* LinkedIn: [Your LinkedIn](https://linkedin.com/in/naveen-bijulal-menon)
+
+---
+
+## ⭐ Why This Project Stands Out
+
+* Full OAuth 2.0 implementation
+* JWT-secured backend APIs
+* Normalized relational schema
+* Rate-limited production endpoints
+* Load-tested deployment
+* Backend-driven analytics architecture
+* Idempotent data ingestion
+
+**Built with engineering discipline — not template code.**
+
+---
+
+
+
+### ⭐ Star this repo if you find it helpful!
+
+**Built with ❤️ for developers**
