@@ -116,12 +116,34 @@ export default function Dashboard() {
 
   // 🔄 Loading Screen (Premium Version Coming Later)
   if (loading || !summary || !analytics) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-400">
-        Loading dashboard…
+  return (
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center relative overflow-hidden">
+
+      {/* Ambient AI glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-600/10 blur-[120px] rounded-full" />
+
+      <div className="relative z-10 flex flex-col items-center gap-6">
+
+        {/* Animated Pulse Orb */}
+        <div className="relative">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 animate-pulse shadow-2xl shadow-indigo-500/30" />
+          <div className="absolute inset-0 w-20 h-20 rounded-full border border-indigo-400/40 animate-spin-slow" />
+        </div>
+
+        {/* Typographic Loading */}
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-medium text-zinc-100 tracking-tight">
+            Initializing Developer Intelligence
+          </h2>
+          <p className="text-sm text-zinc-500 tracking-wide">
+            Syncing repositories · Analyzing signals · Generating insights
+          </p>
+        </div>
+
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   const stats = analytics?.stats || {};
 
