@@ -9,7 +9,7 @@
 [![GitHub](https://img.shields.io/badge/source-code-blue?style=for-the-badge&logo=github)](https://github.com/naveenbmenon/gitsense-ai)
 
 
-[Live Demo](https://gitsense-ai-dashboard.vercel.app/) • [API Docs](https://gitsense-ai-2.onrender.com) 
+[Live Demo](https://gitsense-ai-dashboard.vercel.app/) • [API Docs](https://gitsense-ai-2.onrender.com/docs) 
 
 
 ---
