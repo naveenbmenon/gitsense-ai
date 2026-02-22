@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { fetchSummary, fetchAnalytics, fetchInsights } from "../api";
 import ActivitySection from "../components/layout/ActivitySection";
@@ -7,33 +8,37 @@ import ChartsSection from "../components/layout/ChartsSection";
 import InsightsSection from "../components/layout/InsightsSection";
 import CodingDNA from "../components/CodingDNA";
 
-
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
 
-export default function App() {
+export default function Dashboard() {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [summary, setSummary] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [insights, setInsights] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // 🔐 AUTH CHECK
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get("token");
 
+    // Save token if coming from OAuth
     if (tokenFromUrl) {
       localStorage.setItem("jwt", tokenFromUrl);
-      window.history.replaceState({}, document.title, "/");
+      window.history.replaceState({}, document.title, "/dashboard");
     }
 
     const token = localStorage.getItem("jwt");
 
+    // If no token → go to landing page
     if (!token) {
-      setUser(null);
+      navigate("/");
       return;
     }
 
+    // Fetch current user
     fetch(`${BACKEND_URL}/user/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -44,9 +49,9 @@ export default function App() {
       .then((data) => setUser(data))
       .catch(() => {
         localStorage.removeItem("jwt");
-        setUser(null);
+        navigate("/");
       });
-  }, []);
+  }, [navigate]);
 
   // 📊 LOAD DASHBOARD DATA
   useEffect(() => {
@@ -80,20 +85,18 @@ export default function App() {
     loadData();
   }, [user]);
 
-  const handleLogin = () => {
-    window.location.href = `${BACKEND_URL}/auth/login`;
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("jwt");
     setUser(null);
     setSummary(null);
     setAnalytics(null);
     setInsights([]);
+    navigate("/");
   };
 
   const handleRefresh = async () => {
     setLoading(true);
+
     const token = localStorage.getItem("jwt");
 
     await fetch(
@@ -111,23 +114,7 @@ export default function App() {
     setLoading(false);
   };
 
-  // 🔵 LOGIN SCREEN
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-200">
-        <button
-          onClick={handleLogin}
-          className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 
-                     text-white font-semibold text-lg shadow-lg 
-                     hover:scale-105 hover:shadow-xl transition-all duration-200"
-        >
-          Login with GitHub
-        </button>
-      </div>
-    );
-  }
-
-  // 🟡 LOADING STATE
+  // 🔄 Loading Screen (Premium Version Coming Later)
   if (loading || !summary || !analytics) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-400">
@@ -136,14 +123,12 @@ export default function App() {
     );
   }
 
-  // ✅ SAFE STATS EXTRACTION
   const stats = analytics?.stats || {};
 
-  // 🟢 DASHBOARD
+  // 🟢 DASHBOARD UI
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200 selection:bg-indigo-500/30 font-sans relative overflow-x-hidden">
       
-      {/* Ambient background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-6 pb-24 pt-8 relative z-10">
@@ -154,17 +139,14 @@ export default function App() {
           onLogout={handleLogout}
         />
 
-        {/* Activity Hero Section */}
         <div className="mt-16 sm:mt-24 mb-20">
           <ActivitySection stats={stats} />
         </div>
 
-        {/* Insights Section */}
         <div className="my-20 py-12 border-y border-white/5 bg-gradient-to-r from-transparent via-zinc-900/20 to-transparent">
           <InsightsSection insights={insights} />
         </div>
 
-        {/* Charts + DNA + Summary Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mt-20">
           <div className="lg:col-span-8">
             <ChartsSection analytics={analytics} summary={summary} />
