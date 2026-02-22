@@ -1,47 +1,41 @@
 export default function Header({ user, onRefresh, onLogout }) {
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 mb-16 pb-8 border-b border-zinc-800">
+    <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 py-8 mb-12 relative z-10">
       
-      {/* Left Section */}
-      <div className="flex flex-col">
-        <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-  GitSense
-</h1>
-        <p className="text-zinc-500 mt-2 text-sm">
-          Developer intelligence powered by AI
+      {/* Left Section: Brand & User Context */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          {/* Pulsing AI active indicator */}
+          <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.8)] animate-pulse" />
+          <h1 className="text-2xl font-medium tracking-tight text-zinc-100">
+            GitSense
+          </h1>
+        </div>
+        <p className="text-zinc-500 text-sm font-light tracking-wide">
+          Intelligence for <span className="text-zinc-300 font-medium">@{user?.login || "developer"}</span>
         </p>
       </div>
 
-      {/* Right Section */}
-      <div className="flex items-center gap-4">
-
-        {/* Username Badge */}
-        <div className="px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-          <span className="text-sm font-medium text-indigo-300">
-            @{user?.login || "developer"}
-          </span>
-        </div>
-
-        {/* Refresh Button */}
+      {/* Right Section: Minimalist Actions */}
+      <div className="flex items-center gap-2">
         <button
           onClick={onRefresh}
-          className="px-5 py-2 rounded-xl border border-zinc-700 
-                     text-zinc-300 hover:text-white 
-                     hover:bg-zinc-800 transition"
+          className="text-xs font-medium tracking-wide text-zinc-400 hover:text-zinc-100 px-4 py-2 rounded-full hover:bg-white/[0.04] transition-colors duration-300"
         >
-          Refresh
+          Sync Data
         </button>
-
-        {/* Logout Button */}
+        
+        {/* Subtle vertical separator */}
+        <div className="w-px h-4 bg-white/10" />
+        
         <button
           onClick={onLogout}
-          className="px-5 py-2 rounded-xl bg-white text-black 
-                     font-medium hover:bg-zinc-200 transition"
+          className="text-xs font-medium tracking-wide text-zinc-400 hover:text-rose-400 px-4 py-2 rounded-full hover:bg-rose-500/[0.05] transition-colors duration-300"
         >
-          Logout
+          Disconnect
         </button>
-
       </div>
+      
     </header>
   );
 }

@@ -4,16 +4,8 @@ import { fetchSummary, fetchAnalytics, fetchInsights } from "./api";
 import ActivitySection from "./components/layout/ActivitySection";
 import Summary from "./components/Summary";
 import ChartsSection from "./components/layout/ChartsSection";
-import Charts from "./components/Charts";
 import InsightsSection from "./components/layout/InsightsSection";
-import Insights from "./components/Insights";
-
-import ContributionHeatmap from "./components/ContributionHeatmap";
-
-import StatsBar from "./components/StatsBar";
-
 import CodingDNA from "./components/CodingDNA";
-
 import "./index.css";
 
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
@@ -31,6 +23,7 @@ export default function App() {
   const [insights, setInsights] = useState([]);
 
   const [loading, setLoading] = useState(false);
+
 
 
 
@@ -221,69 +214,44 @@ export default function App() {
   if (!user) {
 
     return (
+    // Deep charcoal canvas with a subtle, ambient AI glow at the top center
+    <div className="min-h-screen bg-zinc-950 text-zinc-200 selection:bg-indigo-500/30 font-sans relative overflow-x-hidden">
+      
+      {/* Ambient background glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-  <button
-    onClick={handleLogin}
-    className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 
-               text-white font-semibold text-lg shadow-lg 
-               hover:scale-105 hover:shadow-xl transition-all duration-200"
-  >
-    Login with GitHub
-  </button>
-</div>
+      {/* Main Content Wrapper */}
+      <div className="max-w-6xl mx-auto px-6 pb-24 pt-8 relative z-10">
+        
+        <Header 
+          user={user} 
+          onRefresh={handleRefresh} 
+          onLogout={handleLogout} 
+        />
 
-    );
+        {/* Instead of stacked boxes, we use an asymmetric hero section */}
+        <div className="mt-16 sm:mt-24 mb-20">
+          <ActivitySection stats={stats} />
+        </div>
 
-  }
+        {/* AI Insights break the layout as a full-width typographic quote */}
+        <div className="my-20 py-12 border-y border-white/5 bg-gradient-to-r from-transparent via-zinc-900/20 to-transparent">
+          <InsightsSection insights={insights} />
+        </div>
 
+        {/* Charts and DNA sit on a continuous plain, no boxes */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mt-20">
+          <div className="lg:col-span-8">
+            <ChartsSection analytics={analytics} summary={summary} />
+          </div>
+          <div className="lg:col-span-4 flex flex-col gap-12">
+             {/* We weave smaller modules into the right column */}
+            <CodingDNA stats={stats} />
+            <Summary data={summary} />
+          </div>
+        </div>
 
-
-  if (loading || !summary || !analytics) {
-
-    return <p>Loading dashboard…</p>;
-
-  }
-
-
-
-  const stats = analytics.stats;
-
-
-
-  return (
-
-    <div className="bg-zinc-950 min-h-screen text-zinc-100">
-    <div className="max-w-7xl mx-auto px-6 py-12">
-
-      <Header
-  user={user}
-  onRefresh={handleRefresh}
-  onLogout={handleLogout}
-/>
-
-
-
-      {stats && <StatsBar stats={stats} />}
-
-      {stats && <CodingDNA stats={stats} />}
-
-
-
-      {/* 🔥 NEW SECTION */}
-
-      <ActivitySection stats={stats} />
-
-
-      <Summary data={summary} />
-
-      <ChartsSection analytics={analytics} summary={summary} />
-
-      <InsightsSection insights={insights} />
-
+      </div>
     </div>
-  </div>
-
   );
-
-}
+  }}
