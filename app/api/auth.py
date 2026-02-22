@@ -56,7 +56,7 @@ async def github_callback(code: str):
 
     # 🔥 Redirect to frontend WITH token
     return RedirectResponse(
-        url=f"{FRONTEND_URL}?token={jwt_token}"
+        url=f"{FRONTEND_URL}/dashboard?token={jwt_token}"
     )
 
 
