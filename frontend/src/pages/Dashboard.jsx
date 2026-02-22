@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import Header from "./components/layout/Header";
+import Header from "../components/layout/Header";
 import { fetchSummary, fetchAnalytics, fetchInsights } from "./api";
-import ActivitySection from "./components/layout/ActivitySection";
-import Summary from "./components/Summary";
-import ChartsSection from "./components/layout/ChartsSection";
-import InsightsSection from "./components/layout/InsightsSection";
-import CodingDNA from "./components/CodingDNA";
+import ActivitySection from "../components/layout/ActivitySection";
+import Summary from "../components/Summary";
+import ChartsSection from "../components/layout/ChartsSection";
+import InsightsSection from "../components/layout/InsightsSection";
+import CodingDNA from "../components/CodingDNA";
 import "./index.css";
 
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
