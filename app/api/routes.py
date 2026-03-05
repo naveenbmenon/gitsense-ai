@@ -1,3 +1,5 @@
+from unittest import result
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -8,6 +10,9 @@ from app.services.analytics import build_stats
 from app.models import Commit, Repository
 from sqlalchemy.orm import Session
 from fastapi import Depends
+
+from app.cache.redis_client import redis_client
+import json
 
 from app.database import get_db
 from app.models.user import User
@@ -62,6 +67,16 @@ def summary(username: str, db: Session = Depends(get_db)):
 
 @router.get("/analytics/{username}")
 def analytics(username: str, db: Session = Depends(get_db)):
+
+    cache_key = f"analytics:{username}"
+
+    cached_data = redis_client.get(cache_key)
+
+    if cached_data:
+        print("CACHE HIT")
+        return json.loads(cached_data)
+    print("CACHE MISS - computing analytics")
+
     user = get_user_or_404(db, username)
 
     # 🔹 Fetch commits
@@ -82,34 +97,43 @@ def analytics(username: str, db: Session = Depends(get_db)):
     # 🔥 Build advanced stats
     stats = build_stats(user, commits, repos)
 
-    return {
-        # 🔥 NEW
+    result = {
         "stats": stats,
-
-        # Existing analytics
         "commits_per_day": commits_per_day(db, user.id),
         "weekend_vs_weekday": weekend_vs_weekday_commits(db, user.id),
         "repository_activity": repository_activity(db, user.id),
-
-        # Heatmap data
         "commits": [
-            {
-                "date": c.commit_time.isoformat()
-            }
+            {"date": c.commit_time.isoformat()}
             for c in commits
         ]
     }
 
+    # 🔥 Store in Redis for 5 minutes
+    redis_client.setex(cache_key, 300, json.dumps(result))
+
+    return result
+
 
 @router.get("/insights/{username}")
 def insights(username: str, db: Session = Depends(get_db)):
+    cache_key = f"insights:{username}"
+
+    cached_data = redis_client.get(cache_key)
+
+    if cached_data:
+        print("CACHE HIT")
+        return json.loads(cached_data)
+    print("CACHE MISS - computing analytics")
     user = get_user_or_404(db, username)
 
-    return {
-        "username": user.github_username,
-        "insights": generate_insights(db, user.id)
+    result = {
+    "username": user.github_username,
+    "insights": generate_insights(db, user.id)
     }
 
+    redis_client.setex(cache_key, 300, json.dumps(result))
+
+    return result
 
 SAFE_THRESHOLD = 100
 
