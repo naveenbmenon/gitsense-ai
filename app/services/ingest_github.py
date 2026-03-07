@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.repository import Repository
 from app.models.commit import Commit
 from app.models.language import RepoLanguage
+from app.cache.redis_client import redis_client
 from app.services.github_client import (
     get_user,
     get_repositories,
@@ -121,6 +122,10 @@ def ingest_user(username: str, github_token: str):
         user.last_fetched_at = datetime.utcnow()
         db.commit()
 
+        # 🔥 Invalidate Redis cache after ingestion
+        redis_client.delete(f"analytics:{username}")
+        redis_client.delete(f"insights:{username}")
+        
         return latest_rate_info  # ✅ return rate limit info
 
     finally:

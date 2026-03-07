@@ -1,6 +1,6 @@
 from unittest import result
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -141,13 +141,13 @@ SAFE_THRESHOLD = 100
 @router.get("/analyze/{username}")
 def analyze_user(
     username: str,
+    background_tasks: BackgroundTasks,
     force_refresh: bool = False,
     github_token: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    rate_info = None
 
-    # 🔒 Pre-check GitHub rate limit BEFORE ingestion
+    # Check GitHub rate limit
     remaining = get_rate_limit_remaining(github_token)
 
     if remaining < SAFE_THRESHOLD:
@@ -161,11 +161,19 @@ def analyze_user(
     ).first()
 
     if force_refresh or not user or should_refresh(user):
-        rate_info = ingest_user(username, github_token)
+
+        background_tasks.add_task(
+            ingest_user,
+            username,
+            github_token
+        )
+
+        return {
+            "status": "Analysis started in background"
+        }
 
     return {
-        "status": "Data ready",
-        "rate_limit": rate_info
+        "status": "Data already fresh"
     }
 
 @router.get("/heatmap/{username}")
