@@ -1,12 +1,22 @@
+import os
+from typing import Generator
+from dotenv import load_dotenv
+load_dotenv()
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.orm import Session
-from fastapi import Depends
 
-DATABASE_URL = "sqlite:///./gitsense.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    connect_args={
+        "sslmode": "require",
+        "connect_timeout": 10
+    }
 )
 
 SessionLocal = sessionmaker(
@@ -17,11 +27,7 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
-
-# -----------------------------
-# FastAPI DB Dependency
-# -----------------------------
-def get_db():
+def get_db() -> Generator:
     db = SessionLocal()
     try:
         yield db

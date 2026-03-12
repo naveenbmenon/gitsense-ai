@@ -42,10 +42,17 @@ def ingest_user(username: str, github_token: str):
             db.refresh(user)
 
         # -----------------------------
+        # 🔹 Load existing commit SHAs once
+        # -----------------------------
+        existing_shas = {
+            sha for (sha,) in db.query(Commit.commit_sha).all()
+        }
+
+        # -----------------------------
         # 2️⃣ REPOSITORY INGESTION
         # -----------------------------
         repos, rate_info = get_repositories(username, github_token)
-        latest_rate_info = rate_info  # store latest rate info
+        latest_rate_info = rate_info
 
         for repo in repos:
 
@@ -67,6 +74,7 @@ def ingest_user(username: str, github_token: str):
                 db.add(repo_obj)
                 db.commit()
                 db.refresh(repo_obj)
+
             else:
                 repo_obj.stars = repo["stargazers_count"]
                 repo_obj.forks = repo["forks_count"]
@@ -76,15 +84,20 @@ def ingest_user(username: str, github_token: str):
             # -----------------------------
             # 3️⃣ COMMIT INGESTION
             # -----------------------------
-            commits, rate_info = get_commits(username, repo["name"], github_token)
-            latest_rate_info = rate_info  # update with latest rate info
+            commits, rate_info = get_commits(
+                username,
+                repo["name"],
+                github_token,
+                since=user.last_fetched_at
+            )
+
+            latest_rate_info = rate_info
+
+            new_commits = []
 
             for c in commits:
-                exists = db.query(Commit).filter_by(
-                    commit_sha=c["sha"]
-                ).first()
 
-                if exists:
+                if c["sha"] in existing_shas:
                     continue
 
                 commit = Commit(
@@ -95,7 +108,12 @@ def ingest_user(username: str, github_token: str):
                     ),
                     commit_message_length=len(c["commit"]["message"])
                 )
-                db.add(commit)
+
+                new_commits.append(commit)
+                existing_shas.add(c["sha"])
+
+            if new_commits:
+                db.add_all(new_commits)
 
             # -----------------------------
             # 4️⃣ LANGUAGE INGESTION
@@ -106,13 +124,17 @@ def ingest_user(username: str, github_token: str):
 
             languages = get_languages(username, repo["name"], github_token)
 
+            new_languages = []
+
             for lang, bytes_used in languages.items():
                 lang_obj = RepoLanguage(
                     repo_id=repo_obj.id,
                     language=lang,
                     bytes=bytes_used
                 )
-                db.add(lang_obj)
+                new_languages.append(lang_obj)
+
+            db.add_all(new_languages)
 
             db.commit()
 
@@ -122,11 +144,13 @@ def ingest_user(username: str, github_token: str):
         user.last_fetched_at = datetime.utcnow()
         db.commit()
 
-        # 🔥 Invalidate Redis cache after ingestion
+        # -----------------------------
+        # 🔥 Invalidate Redis cache
+        # -----------------------------
         redis_client.delete(f"analytics:{username}")
         redis_client.delete(f"insights:{username}")
-        
-        return latest_rate_info  # ✅ return rate limit info
+
+        return latest_rate_info
 
     finally:
         db.close()

@@ -29,16 +29,20 @@ def _make_request(url: str, github_token: str, params=None):
     return response.json(), rate_limit
 
 
-def _fetch_all_pages(url: str, github_token: str):
+def _fetch_all_pages(url: str, github_token: str, params=None):
     results = []
     page = 1
     rate_limit_info = {}
 
     while True:
+        # create fresh params per request
+        request_params = (params or {}).copy()
+        request_params["page"] = page
+
         data, rate_limit_info = _make_request(
             url,
             github_token,
-            params={"per_page": 100, "page": page}
+            params=request_params
         )
 
         if not data:
@@ -48,7 +52,6 @@ def _fetch_all_pages(url: str, github_token: str):
         page += 1
 
     return results, rate_limit_info
-
 
 def get_user(username: str, github_token: str):
     url = f"{GITHUB_API_BASE}/users/{username}"
@@ -62,9 +65,12 @@ def get_repositories(username: str, github_token: str):
     return repos, rate_limit
 
 
-def get_commits(username: str, repo: str, github_token: str):
+def get_commits(username: str, repo: str, github_token: str, since=None):
     url = f"{GITHUB_API_BASE}/repos/{username}/{repo}/commits"
-    commits, rate_limit = _fetch_all_pages(url, github_token)
+    params = {"per_page": 100}
+    if since:
+       params["since"] = since.isoformat()
+    commits, rate_limit = _fetch_all_pages(url, github_token, params)
     return commits, rate_limit
 
 def get_languages(username: str, repo: str, github_token: str):

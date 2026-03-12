@@ -3,10 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.api.auth import router as auth_router
 from app.database import Base, engine
+from contextlib import asynccontextmanager
 
-Base.metadata.create_all(bind=engine)
+# Import ALL your models here so create_all knows about them
+from app.models import User, Repository , Commit  # replace with your actual model names
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+app = FastAPI(lifespan=lifespan)  # only one app instance
 
 app.add_middleware(
     CORSMiddleware,
