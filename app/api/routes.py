@@ -201,3 +201,11 @@ def heatmap(username: str, db: Session = Depends(get_db)):
         {"date": str(r.date), "count": r.count}
         for r in results
     ]
+
+@router.get("/debug-ingest/{username}")
+def debug_ingest(username: str, github_token: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.services.ingest_github import ingest_user
+    ingest_user(username, github_token)
+    
+    commit_count = db.query(Commit).join(Repository).filter(Repository.user_id == db.query(User).filter_by(github_username=username).first().id).count()
+    return {"message": "Ingestion complete", "commits_in_db": commit_count}
