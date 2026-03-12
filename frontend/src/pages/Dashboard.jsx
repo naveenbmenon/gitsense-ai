@@ -10,6 +10,21 @@ import CodingDNA from "../components/CodingDNA";
 
 const BACKEND_URL = "https://gitsense-ai-2.onrender.com";
 
+// ⏳ Poll summary until commits appear or max attempts reached
+const pollUntilReady = async (username, maxAttempts = 10, intervalMs = 3000) => {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    try {
+      const s = await fetchSummary(username);
+      if (s?.total_commits > 0) return s;
+    } catch {
+      // summary endpoint may 404 if user not yet in DB — keep polling
+    }
+  }
+  // Return whatever we have after timeout (may be 0 commits)
+  return await fetchSummary(username);
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
@@ -19,6 +34,7 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState("Authenticating...");
 
   // UI & Animation States
   const dashboardRef = useRef(null);
@@ -29,7 +45,6 @@ export default function Dashboard() {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get("token");
 
-    // Save token if coming from OAuth
     if (tokenFromUrl) {
       localStorage.setItem("jwt", tokenFromUrl);
       window.history.replaceState({}, document.title, "/dashboard");
@@ -37,13 +52,11 @@ export default function Dashboard() {
 
     const token = localStorage.getItem("jwt");
 
-    // If no token → go to landing page
     if (!token) {
       navigate("/");
       return;
     }
 
-    // Fetch current user
     fetch(`${BACKEND_URL}/user/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -69,11 +82,18 @@ export default function Dashboard() {
         const username = user.login;
         const token = localStorage.getItem("jwt");
 
+        // Step 1 — trigger ingestion
+        setLoadingStatus("Fetching your GitHub data...");
         await fetch(`${BACKEND_URL}/analyze/${username}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const s = await fetchSummary(username);
+        // Step 2 — poll until ingestion completes
+        setLoadingStatus("Analyzing repository history...");
+        const s = await pollUntilReady(username);
+
+        // Step 3 — fetch remaining data
+        setLoadingStatus("Building your dashboard...");
         const a = await fetchAnalytics(username);
         const i = await fetchInsights(username);
 
@@ -84,6 +104,7 @@ export default function Dashboard() {
         console.error("❌ Data load error:", error);
       } finally {
         setLoading(false);
+        setLoadingStatus("Authenticating...");
       }
     };
 
@@ -108,7 +129,7 @@ export default function Dashboard() {
       const timer = setTimeout(() => setMounted(true), 150);
       return () => clearTimeout(timer);
     } else {
-      setMounted(false); // Reset animation if reloading
+      setMounted(false);
     }
   }, [loading, summary, analytics]);
 
@@ -122,25 +143,40 @@ export default function Dashboard() {
   };
 
   const handleRefresh = async () => {
-    setLoading(true);
-    const token = localStorage.getItem("jwt");
+    try {
+      setLoading(true);
+      setMounted(false);
 
-    await fetch(
-      `${BACKEND_URL}/analyze/${user.login}?force_refresh=true`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      const username = user.login;
+      const token = localStorage.getItem("jwt");
 
-    const s = await fetchSummary(user.login);
-    const a = await fetchAnalytics(user.login);
-    const i = await fetchInsights(user.login);
+      // Step 1 — force re-ingestion
+      setLoadingStatus("Re-fetching your GitHub data...");
+      await fetch(`${BACKEND_URL}/analyze/${username}?force_refresh=true`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    setSummary(s);
-    setAnalytics(a);
-    setInsights(i.insights || []);
-    setLoading(false);
+      // Step 2 — poll until fresh data is ready
+      setLoadingStatus("Analyzing repository history...");
+      const s = await pollUntilReady(username);
+
+      // Step 3 — fetch remaining data
+      setLoadingStatus("Rebuilding your dashboard...");
+      const a = await fetchAnalytics(username);
+      const i = await fetchInsights(username);
+
+      setSummary(s);
+      setAnalytics(a);
+      setInsights(i.insights || []);
+    } catch (error) {
+      console.error("❌ Refresh error:", error);
+    } finally {
+      setLoading(false);
+      setLoadingStatus("Authenticating...");
+    }
   };
 
-  // 🔄 LOADING SCREEN (Premium AI Theme)
+  // 🔄 LOADING SCREEN
   if (loading || !summary || !analytics) {
     return (
       <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center relative overflow-hidden font-sans">
@@ -162,12 +198,13 @@ export default function Dashboard() {
               </span>
             </h2>
             <div className="flex flex-col items-center gap-2">
+              {/* 🔄 Dynamic status message */}
               <p className="text-[10px] sm:text-xs font-mono text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                Analyzing repository history
+                {loadingStatus}
               </p>
               <p className="text-[10px] sm:text-xs font-mono text-zinc-600 uppercase tracking-widest">
-                Mapping developer archetype...
+                This may take 10–30 seconds on first load...
               </p>
             </div>
           </div>
@@ -180,15 +217,15 @@ export default function Dashboard() {
 
   // 🟢 MAIN DASHBOARD UI
   return (
-    <div 
+    <div
       ref={dashboardRef}
       className="min-h-screen bg-[#09090b] text-zinc-200 font-sans selection:bg-indigo-500/30 overflow-x-hidden relative"
     >
       {/* 🔦 THE GLOBAL SPOTLIGHT */}
-      <div 
+      <div
         className="pointer-events-none fixed inset-0 z-30 opacity-0 lg:opacity-100 transition duration-300 mix-blend-screen"
         style={{
-          background: `radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.03), transparent 40%)`
+          background: `radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.03), transparent 40%)`,
         }}
       />
 
@@ -197,7 +234,6 @@ export default function Dashboard() {
 
       {/* 🎛️ DASHBOARD CONTENT */}
       <div className="max-w-7xl mx-auto px-6 pb-32 pt-8 relative z-10">
-        
         <div className={`transition-all duration-1000 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}>
           <Header user={user} onRefresh={handleRefresh} onLogout={handleLogout} />
         </div>
@@ -220,7 +256,6 @@ export default function Dashboard() {
             <Summary data={summary} />
           </div>
         </div>
-
       </div>
     </div>
   );
