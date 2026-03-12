@@ -84,11 +84,13 @@ def ingest_user(username: str, github_token: str):
             # -----------------------------
             # 3️⃣ COMMIT INGESTION
             # -----------------------------
+            existing_commit_count = db.query(Commit).filter_by(repo_id=repo_obj.id).count()
+
             commits, rate_info = get_commits(
-                username,
-                repo["name"],
-                github_token,
-                since=user.last_fetched_at
+            username,
+            repo["name"],
+            github_token,
+            since=user.last_fetched_at if existing_commit_count > 0 else None
             )
 
             latest_rate_info = rate_info
