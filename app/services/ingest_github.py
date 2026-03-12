@@ -41,20 +41,26 @@ def ingest_user(username: str, github_token: str):
             db.commit()
             db.refresh(user)
 
+        print(f"👤 User: {user.github_username} | last_fetched_at: {user.last_fetched_at}")
+
         # -----------------------------
         # 🔹 Load existing commit SHAs once
         # -----------------------------
         existing_shas = {
             sha for (sha,) in db.query(Commit.commit_sha).all()
         }
+        print(f"🗄️ Total existing commit SHAs in DB: {len(existing_shas)}")
 
         # -----------------------------
         # 2️⃣ REPOSITORY INGESTION
         # -----------------------------
         repos, rate_info = get_repositories(username, github_token)
         latest_rate_info = rate_info
+        print(f"📦 Total repos fetched from GitHub: {len(repos)}")
 
         for repo in repos:
+
+            print(f"\n🔍 Processing repo: {repo['name']}")
 
             repo_obj = db.query(Repository).filter_by(
                 user_id=user.id,
@@ -74,31 +80,35 @@ def ingest_user(username: str, github_token: str):
                 db.add(repo_obj)
                 db.commit()
                 db.refresh(repo_obj)
-
+                print(f"  ✅ Created new repo_obj (id={repo_obj.id})")
             else:
                 repo_obj.stars = repo["stargazers_count"]
                 repo_obj.forks = repo["forks_count"]
                 repo_obj.last_pushed_at = parse_github_datetime(repo["pushed_at"])
                 db.commit()
+                print(f"  ♻️ Updated existing repo_obj (id={repo_obj.id})")
 
             # -----------------------------
             # 3️⃣ COMMIT INGESTION
             # -----------------------------
             existing_commit_count = db.query(Commit).filter_by(repo_id=repo_obj.id).count()
+            print(f"  📊 Existing commits in DB for this repo: {existing_commit_count}")
+
+            since_value = user.last_fetched_at if existing_commit_count > 0 else None
+            print(f"  🕐 Using since={since_value}")
 
             commits, rate_info = get_commits(
-            username,
-            repo["name"],
-            github_token,
-            since=user.last_fetched_at if existing_commit_count > 0 else None
+                username,
+                repo["name"],
+                github_token,
+                since=since_value
             )
-
             latest_rate_info = rate_info
+            print(f"  📥 Commits fetched from GitHub: {len(commits)}")
 
             new_commits = []
 
             for c in commits:
-
                 if c["sha"] in existing_shas:
                     continue
 
@@ -113,6 +123,8 @@ def ingest_user(username: str, github_token: str):
 
                 new_commits.append(commit)
                 existing_shas.add(c["sha"])
+
+            print(f"  💾 New commits to insert: {len(new_commits)}")
 
             if new_commits:
                 db.add_all(new_commits)
@@ -137,7 +149,6 @@ def ingest_user(username: str, github_token: str):
                 new_languages.append(lang_obj)
 
             db.add_all(new_languages)
-
             db.commit()
 
         # -----------------------------
@@ -145,6 +156,8 @@ def ingest_user(username: str, github_token: str):
         # -----------------------------
         user.last_fetched_at = datetime.utcnow()
         db.commit()
+
+        print(f"\n✅ Ingestion complete for {username}")
 
         # -----------------------------
         # 🔥 Invalidate Redis cache
@@ -154,6 +167,9 @@ def ingest_user(username: str, github_token: str):
 
         return latest_rate_info
 
+    except Exception as e:
+        print(f"❌ Ingestion error: {e}")
+        raise
+
     finally:
         db.close()
-        
