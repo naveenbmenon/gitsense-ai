@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     yield
 
-app = FastAPI(lifespan=lifespan)  # only one app instance
+app = FastAPI(lifespan=lifespan)  # only one app instance is created
 
 app.add_middleware(
     CORSMiddleware,
