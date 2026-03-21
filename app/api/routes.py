@@ -177,7 +177,7 @@ def analyze_user(
         }
 
     return {
-        "status": "Data already fresh"
+        "status": "Data already fresh - No need to refresh"
     }
 
 @router.get("/heatmap/{username}")
