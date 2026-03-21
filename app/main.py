@@ -5,7 +5,7 @@ from app.api.auth import router as auth_router
 from app.database import Base, engine
 from contextlib import asynccontextmanager
 
-# Import ALL your models here so create_all knows about them
+# Import ALL your models here so create_all knows about them yey
 from app.models import User, Repository , Commit  # replace with your actual model names
 
 @asynccontextmanager
