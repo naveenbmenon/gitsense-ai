@@ -14,7 +14,6 @@ engine = create_engine(
     pool_size=5,
     max_overflow=10,
     connect_args={
-        "sslmode": "require",
         "connect_timeout": 10
     }
 )

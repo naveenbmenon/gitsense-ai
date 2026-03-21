@@ -13,7 +13,7 @@ from fastapi import Depends
 
 from app.cache.redis_client import redis_client
 import json
-
+import os 
 from app.database import get_db
 from app.models.user import User
 from app.services.ingest_github import ingest_user
@@ -22,6 +22,7 @@ from app.api.auth import get_current_user
 from app.models.commit import Commit
 from app.models.repository import Repository
 from sqlalchemy.orm import Session
+from app.celery.tasks import run_ingestion
 
 from app.analytics.metrics import (
     total_commits,
@@ -143,9 +144,13 @@ def analyze_user(
     username: str,
     background_tasks: BackgroundTasks,
     force_refresh: bool = False,
-    github_token: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    import os
+    github_token = os.getenv("GITHUB_TOKEN")
+
+    if not github_token:
+        raise HTTPException(status_code=500, detail="GitHub token not configured")
 
     # Check GitHub rate limit
     remaining = get_rate_limit_remaining(github_token)
@@ -162,8 +167,7 @@ def analyze_user(
 
     if force_refresh or not user or should_refresh(user):
 
-        background_tasks.add_task(
-            ingest_user,
+        run_ingestion.delay(
             username,
             github_token
         )
