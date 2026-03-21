@@ -12,12 +12,12 @@
         }
       },
       "start": {
-        "cmd": "python3 -m celery -A app.celery.celery_app.celery_app worker --loglevel=info"
+        "cmd": "python3 -m celery -A app.celery.celery_app.celery_app worker --loglevel=info --pool=solo"
       }
     }
   },
   "deploy": {
-    "startCommand": "python3 -m celery -A app.celery.celery_app.celery_app worker --loglevel=debug --without-heartbeat",
+    "startCommand": "python3 -m celery -A app.celery.celery_app.celery_app worker --loglevel=info --pool=solo",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
