@@ -15,5 +15,10 @@
         "cmd": "python3 -m celery -A app.celery.celery_app.celery_app worker --loglevel=info"
       }
     }
+  },
+  "deploy": {
+    "startCommand": "python3 -m celery -A app.celery.celery_app.celery_app worker --loglevel=info",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
   }
 }
