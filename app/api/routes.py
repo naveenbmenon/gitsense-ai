@@ -10,6 +10,7 @@ from app.services.analytics import build_stats
 from app.models import Commit, Repository
 from sqlalchemy.orm import Session
 from fastapi import Depends
+from app.services.ingest_github import ingest_user
 
 from app.cache.redis_client import redis_client
 import json
@@ -152,7 +153,6 @@ def analyze_user(
     if not github_token:
         raise HTTPException(status_code=500, detail="GitHub token not configured")
 
-    # Check GitHub rate limit
     remaining = get_rate_limit_remaining(github_token)
 
     if remaining < SAFE_THRESHOLD:
@@ -166,18 +166,25 @@ def analyze_user(
     ).first()
 
     if force_refresh or not user or should_refresh(user):
-
-        run_ingestion.delay(
-            username,
-            github_token
-        )
+        try:
+            run_ingestion.delay(username, github_token)
+            mode = "distributed"
+        except Exception:
+            background_tasks.add_task(
+                ingest_user,
+                username,
+                github_token
+            )
+            mode = "fallback"
 
         return {
-            "status": "Analysis started in background"
+            "status": "Analysis started in background",
+            "mode": mode
         }
 
     return {
-        "status": "Data already fresh - No need to refresh"
+        "status": "Data already fresh - No need to refresh",
+        "mode": "cached"
     }
 
 @router.get("/heatmap/{username}")
