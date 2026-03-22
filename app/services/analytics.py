@@ -1,14 +1,15 @@
 from collections import Counter
 from datetime import datetime, timedelta
 from typing import List
+import pytz  
+IST = pytz.timezone('Asia/Kolkata')  
 
 
-def calculate_streaks(commit_dates: List[datetime]):
+def calculate_streaks(commit_dates):
     if not commit_dates:
         return 0, 0
 
     unique_days = sorted(set(d.date() for d in commit_dates))
-
     longest = 1
     current = 1
 
@@ -21,10 +22,9 @@ def calculate_streaks(commit_dates: List[datetime]):
 
     longest = max(longest, current)
 
-    # Current streak (count backwards from today)
-    today = datetime.utcnow().date()
+    # Use IST for today
+    today = datetime.now(IST).date()  # CHANGED
     current_streak = 0
-
     day_pointer = today
 
     while day_pointer in unique_days:
@@ -34,10 +34,10 @@ def calculate_streaks(commit_dates: List[datetime]):
     return longest, current_streak
 
 
-def calculate_peak_hour(commit_dates: List[datetime]):
+def calculate_peak_hour(commit_dates):
     if not commit_dates:
         return None
-
+    # Hours are already in IST if converted before calling
     hour_counts = Counter(d.hour for d in commit_dates)
     peak_hour = hour_counts.most_common(1)[0][0]
     return peak_hour
@@ -160,8 +160,18 @@ def calculate_personality(stats: dict):
     }
 
 def build_stats(user, commits, repos):
-    commit_dates = [c.commit_time for c in commits if c.commit_time]
+    # Convert all commit times to IST before any calculation
+    commit_dates = []
+    for c in commits:
+        if c.commit_time:
+            if c.commit_time.tzinfo is None:
+                ist_time = pytz.utc.localize(c.commit_time).astimezone(IST)
+            else:
+                ist_time = c.commit_time.astimezone(IST)
+            # Strip tzinfo for naive datetime operations
+            commit_dates.append(ist_time.replace(tzinfo=None))
 
+    # Rest of your build_stats stays exactly the same
     longest_streak, current_streak = calculate_streaks(commit_dates)
     peak_hour = calculate_peak_hour(commit_dates)
     favorite_day = calculate_favorite_day(commit_dates)
@@ -170,7 +180,6 @@ def build_stats(user, commits, repos):
     weekly = calculate_weekly_activity(commit_dates)
     top_repos = calculate_top_repos_last_30_days(commits, repos)
     momentum = calculate_momentum(trend_percent, current_streak)
-
 
     stats = {
         "total_commits": len(commits),
@@ -192,15 +201,11 @@ def build_stats(user, commits, repos):
     return stats
 
 
-def calculate_weekly_activity(commit_dates: List[datetime]):
+def calculate_weekly_activity(commit_dates):
     if not commit_dates:
-        return {
-            "commits": 0,
-            "active_days": 0,
-            "delta_percent": 0
-        }
+        return {"commits": 0, "active_days": 0, "delta_percent": 0}
 
-    now = datetime.utcnow()
+    now = datetime.now(IST).replace(tzinfo=None)  # CHANGED
     seven_days_ago = now - timedelta(days=7)
     fourteen_days_ago = now - timedelta(days=14)
 
@@ -215,16 +220,12 @@ def calculate_weekly_activity(commit_dates: List[datetime]):
 
     this_week_count = len(this_week)
     last_week_count = len(last_week)
-
     active_days = len(set(d.date() for d in this_week))
 
     if last_week_count == 0:
         delta_percent = 100 if this_week_count > 0 else 0
     else:
-        delta_percent = (
-            (this_week_count - last_week_count)
-            / last_week_count
-        ) * 100
+        delta_percent = ((this_week_count - last_week_count) / last_week_count) * 100
 
     return {
         "commits": this_week_count,
