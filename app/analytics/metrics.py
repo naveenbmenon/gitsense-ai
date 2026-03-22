@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 from collections import defaultdict
 from sqlalchemy.orm import Session
-import pytz
+import pytz                                    # ADD THIS
+
 from app.models.commit import Commit
 from app.models.repository import Repository
 from app.models.language import RepoLanguage
 
+IST = pytz.timezone('Asia/Kolkata')           # ADD THIS
 def total_commits(db: Session, user_id: int) -> int:
     return (
         db.query(Commit)
