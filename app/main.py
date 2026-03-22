@@ -4,16 +4,17 @@ from app.api.routes import router
 from app.api.auth import router as auth_router
 from app.database import Base, engine
 from contextlib import asynccontextmanager
+from prometheus_fastapi_instrumentator import Instrumentator
 
-# Import ALL your models here so create_all knows about them yey
-from app.models import User, Repository , Commit  # replace with your actual model names
+# Import ALL your models here so create_all knows about them
+from app.models import User, Repository, Commit
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     yield
 
-app = FastAPI(lifespan=lifespan)  # only one app instance is created
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Prometheus instrumentation
+Instrumentator().instrument(app).expose(app)
 
 app.include_router(router)
 app.include_router(auth_router)
