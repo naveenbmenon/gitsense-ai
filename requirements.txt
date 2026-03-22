@@ -46,7 +46,6 @@ python-engineio==4.13.1
 python-jose==3.5.0
 python-socketio==5.16.1
 pytz==2026.1.post1
-pywin32==311
 pyzmq==27.1.0
 redis==7.2.1
 requests==2.32.5
