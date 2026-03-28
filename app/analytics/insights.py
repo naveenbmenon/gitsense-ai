@@ -1,6 +1,6 @@
 from typing import List, Dict
 from sqlalchemy.orm import Session
-import google.generativeai as genai
+from google import genai
 import os
 import json
 
@@ -15,82 +15,59 @@ from app.models.commit import Commit
 from app.models.repository import Repository
 
 # Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 def weekend_activity_insight(db: Session, user_id: int):
     stats = weekend_vs_weekday_commits(db, user_id)
-
     total = stats["weekday"] + stats["weekend"]
     if total == 0:
         return None
-
     weekend_pct = round((stats["weekend"] / total) * 100, 2)
-
     if weekend_pct < 30:
         return None
-
     return {
         "type": "activity",
         "title": "High Weekend Activity",
         "description": f"{weekend_pct}% of your commits happened on weekends.",
-        "data": {
-            "weekend_percentage": weekend_pct
-        }
+        "data": {"weekend_percentage": weekend_pct}
     }
 
 
 def inactive_repositories_insight(db: Session, user_id: int):
     activity = repository_activity(db, user_id)
     inactive_count = len(activity["inactive_repos"])
-
     if inactive_count == 0:
         return None
-
     return {
         "type": "repository",
         "title": "Inactive Repositories Detected",
         "description": f"{inactive_count} repositories have not been updated recently.",
-        "data": {
-            "inactive_repos": activity["inactive_repos"]
-        }
+        "data": {"inactive_repos": activity["inactive_repos"]}
     }
 
 
 def language_concentration_insight(db: Session, user_id: int):
     dist = language_distribution(db, user_id)
-
     if not dist:
         return None
-
     top_lang, pct = next(iter(dist.items()))
-
     if pct < 50:
         return None
-
     return {
         "type": "skill",
         "title": "Strong Language Concentration",
         "description": f"{pct}% of your code is written in {top_lang}.",
-        "data": {
-            "language": top_lang,
-            "percentage": pct
-        }
+        "data": {"language": top_lang, "percentage": pct}
     }
 
 
 def generate_health_score(db: Session, user_id: int):
-    """
-    AI Developer Health Score — analyzes coding patterns
-    and returns a health assessment with score and recommendations
-    """
     try:
         from datetime import datetime, timedelta
         import pytz
         IST = pytz.timezone('Asia/Kolkata')
 
-        # Fetch commits
         commits = (
             db.query(Commit)
             .join(Repository)
@@ -101,7 +78,6 @@ def generate_health_score(db: Session, user_id: int):
         if not commits:
             return None
 
-        # Build stats for Gemini
         now = datetime.now(IST).replace(tzinfo=None)
         seven_days_ago = now - timedelta(days=7)
         thirty_days_ago = now - timedelta(days=30)
@@ -111,23 +87,16 @@ def generate_health_score(db: Session, user_id: int):
         monthly_commits = [c for c in commits
                           if c.commit_time and c.commit_time >= thirty_days_ago]
 
-        # Late night commits (after 10 PM)
         late_night = [c for c in monthly_commits
                      if c.commit_time and c.commit_time.hour >= 22]
         late_night_pct = round(len(late_night) / max(len(monthly_commits), 1) * 100)
 
-        # Weekend commits
         weekend = [c for c in monthly_commits
                   if c.commit_time and c.commit_time.weekday() >= 5]
         weekend_pct = round(len(weekend) / max(len(monthly_commits), 1) * 100)
 
-        # Weekly average
         weekly_avg = len(monthly_commits) / 4
         this_week = len(recent_commits)
-
-        # Commit messages sample
-        messages = [c.message[:50] for c in commits[-10:]
-                   if hasattr(c, 'message') and c.message]
 
         prompt = f"""
         Analyze this developer's GitHub activity and provide a health assessment.
@@ -138,7 +107,6 @@ def generate_health_score(db: Session, user_id: int):
         - Monthly average per week: {round(weekly_avg, 1)} commits
         - Late night commits (after 10 PM): {late_night_pct}%
         - Weekend commits: {weekend_pct}%
-        - Recent commit messages: {messages}
 
         Return ONLY a JSON object with exactly these fields:
         {{
@@ -152,10 +120,12 @@ def generate_health_score(db: Session, user_id: int):
         No markdown, no backticks, just raw JSON.
         """
 
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         text = response.text.strip()
 
-        # Clean response if needed
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
@@ -178,10 +148,6 @@ def generate_health_score(db: Session, user_id: int):
 
 
 def generate_commit_story(db: Session, user_id: int):
-    """
-    AI Commit Story — turns last 30 days of commits
-    into a readable narrative of what the developer built
-    """
     try:
         from datetime import datetime, timedelta
         from collections import defaultdict
@@ -191,7 +157,6 @@ def generate_commit_story(db: Session, user_id: int):
         now = datetime.now(IST).replace(tzinfo=None)
         thirty_days_ago = now - timedelta(days=30)
 
-        # Fetch recent commits with repo info
         commits = (
             db.query(Commit, Repository)
             .join(Repository, Repository.id == Commit.repo_id)
@@ -206,44 +171,36 @@ def generate_commit_story(db: Session, user_id: int):
         if not commits:
             return None
 
-        # Group by repo
-        repo_commits = defaultdict(list)
+        repo_commits = defaultdict(int)
         for commit, repo in commits:
-            if hasattr(commit, 'message') and commit.message:
-                repo_commits[repo.repo_name].append({
-                    "message": commit.message[:60],
-                    "date": commit.commit_time.strftime("%b %d")
-                })
+            repo_commits[repo.repo_name] += 1
 
-        if not repo_commits:
-            return None
-
-        # Build summary for Gemini
         summary = []
-        for repo_name, repo_commit_list in repo_commits.items():
+        for repo_name, count in repo_commits.items():
             summary.append({
                 "repo": repo_name,
-                "commit_count": len(repo_commit_list),
-                "sample_messages": [c["message"] for c in repo_commit_list[:5]]
+                "commit_count": count
             })
 
         prompt = f"""
         A developer made these GitHub commits in the last 30 days.
-        Write a 3-4 sentence narrative story of what they built,
-        what challenges they faced, and how productive they were.
+        Write a 3-4 sentence narrative story of what they built and how productive they were.
 
         Activity: {json.dumps(summary)}
 
         Rules:
         - Write in second person ("You spent this month...")
-        - Be specific about what they built based on commit messages
+        - Be specific about which repositories they worked on
         - Mention their most active repository
         - Sound encouraging and insightful
         - Keep it under 100 words
         - Return ONLY the narrative text, no JSON, no formatting
         """
 
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         story = response.text.strip()
 
         return {
