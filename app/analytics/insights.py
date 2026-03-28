@@ -121,7 +121,7 @@ def generate_health_score(db: Session, user_id: int):
         """
 
         response = client.models.generate_content(
-            model="gemini-1.5-flash-8b",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         text = response.text.strip()
@@ -198,7 +198,7 @@ def generate_commit_story(db: Session, user_id: int):
         """
 
         response = client.models.generate_content(
-            model="gemini-1.5-flash-8b",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         story = response.text.strip()
