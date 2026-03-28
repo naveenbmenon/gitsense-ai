@@ -28,7 +28,13 @@ app.add_middleware(
 )
 
 # Prometheus instrumentation
-Instrumentator().instrument(app).expose(app)
+Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=["/metrics"],
+).instrument(app).expose(app)
 
 app.include_router(router)
 app.include_router(auth_router)
