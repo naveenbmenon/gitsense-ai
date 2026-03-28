@@ -36,14 +36,21 @@ from app.analytics.insights import generate_insights
 
 router = APIRouter()
 
+SAFE_THRESHOLD = 100
+
 def check_user_rate_limit(username: str) -> bool:
-    key = f"ratelimit:{username}"
-    count = redis_client.get(key)
-    if count and int(count) >= 5:
-        return False
-    redis_client.incr(key)
-    redis_client.expire(key, 3600)
-    return True
+    try:
+        key = f"ratelimit:{username}"
+        pipe = redis_client.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, 3600)
+        results = pipe.execute()
+        count = results[0]
+        if count > 5:
+            return False
+        return True
+    except Exception:
+        return True
 
 @router.get("/health")
 def health(db: Session = Depends(get_db)):
@@ -95,19 +102,20 @@ def summary(username: str, db: Session = Depends(get_db)):
 
 @router.get("/analytics/{username}")
 def analytics(username: str, db: Session = Depends(get_db)):
-
     cache_key = f"analytics:{username}"
 
-    cached_data = redis_client.get(cache_key)
+    try:
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            print("CACHE HIT")
+            return json.loads(cached_data)
+    except Exception:
+        print("CACHE ERROR - computing fresh")
 
-    if cached_data:
-        print("CACHE HIT")
-        return json.loads(cached_data)
     print("CACHE MISS - computing analytics")
 
     user = get_user_or_404(db, username)
 
-    # 🔹 Fetch commits
     commits = (
         db.query(Commit)
         .join(Repository)
@@ -115,14 +123,12 @@ def analytics(username: str, db: Session = Depends(get_db)):
         .all()
     )
 
-    # 🔹 Fetch repos
     repos = (
         db.query(Repository)
         .filter(Repository.user_id == user.id)
         .all()
     )
 
-    # 🔥 Build advanced stats
     stats = build_stats(user, commits, repos)
 
     result = {
@@ -136,8 +142,10 @@ def analytics(username: str, db: Session = Depends(get_db)):
         ]
     }
 
-    # 🔥 Store in Redis for 5 minutes
-    redis_client.setex(cache_key, 300, json.dumps(result))
+    try:
+        redis_client.setex(cache_key, 1800, json.dumps(result))
+    except Exception:
+        print("CACHE WRITE ERROR - continuing without cache")
 
     return result
 
@@ -146,24 +154,28 @@ def analytics(username: str, db: Session = Depends(get_db)):
 def insights(username: str, db: Session = Depends(get_db)):
     cache_key = f"insights:{username}"
 
-    cached_data = redis_client.get(cache_key)
+    try:
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            print("CACHE HIT")
+            return json.loads(cached_data)
+    except Exception:
+        print("CACHE ERROR - computing fresh")
 
-    if cached_data:
-        print("CACHE HIT")
-        return json.loads(cached_data)
-    print("CACHE MISS - computing analytics")
+    print("CACHE MISS - computing insights")
     user = get_user_or_404(db, username)
 
     result = {
-    "username": user.github_username,
-    "insights": generate_insights(db, user.id)
+        "username": user.github_username,
+        "insights": generate_insights(db, user.id)
     }
 
-    redis_client.setex(cache_key, 300, json.dumps(result))
+    try:
+        redis_client.setex(cache_key, 1800, json.dumps(result))
+    except Exception:
+        print("CACHE WRITE ERROR - continuing without cache")
 
     return result
-
-SAFE_THRESHOLD = 100
 
 
 @router.get("/analyze/{username}")
@@ -175,6 +187,7 @@ def analyze_user(
 ):
     import os
     github_token = os.getenv("GITHUB_TOKEN")
+
     if not check_user_rate_limit(username):
         raise HTTPException(
             status_code=429,
@@ -218,6 +231,7 @@ def analyze_user(
         "mode": "cached"
     }
 
+
 @router.get("/heatmap/{username}")
 def heatmap(username: str, db: Session = Depends(get_db)):
 
@@ -243,4 +257,3 @@ def heatmap(username: str, db: Session = Depends(get_db)):
         {"date": str(r.date), "count": r.count}
         for r in results
     ]
-
