@@ -172,6 +172,8 @@ def generate_health_score(db: Session, user_id: int):
 
     except Exception as e:
         print(f"Health score generation failed: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -256,6 +258,8 @@ def generate_commit_story(db: Session, user_id: int):
 
     except Exception as e:
         print(f"Commit story generation failed: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
