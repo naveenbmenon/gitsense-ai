@@ -158,6 +158,37 @@ def calculate_personality(stats: dict):
             "behavior": behavior_score
         }
     }
+def detect_anomaly(commit_dates):
+    if not commit_dates:
+        return {"anomaly": False}
+
+    now = datetime.now(IST).replace(tzinfo=None)
+    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
+
+    recent = [d for d in commit_dates if d >= seven_days_ago]
+    monthly = [d for d in commit_dates if d >= thirty_days_ago]
+
+    weekly_avg = len(monthly) / 4
+    this_week = len(recent)
+
+    if weekly_avg > 0 and this_week < weekly_avg * 0.6:
+        drop = int((1 - this_week / weekly_avg) * 100)
+        return {
+            "anomaly": True,
+            "type": "activity_drop",
+            "message": f"Commit frequency dropped {drop}% below your 4-week average"
+        }
+
+    if weekly_avg > 0 and this_week > weekly_avg * 1.5:
+        spike = int((this_week / weekly_avg - 1) * 100)
+        return {
+            "anomaly": True,
+            "type": "activity_spike",
+            "message": f"Commit frequency spiked {spike}% above your 4-week average"
+        }
+
+    return {"anomaly": False}
 
 def build_stats(user, commits, repos):
     # Convert all commit times to IST before any calculation
@@ -197,6 +228,7 @@ def build_stats(user, commits, repos):
 
     # 🧬 Add personality classification
     stats["personality"] = calculate_personality(stats)
+    stats["anomaly"] = detect_anomaly(commit_dates)
 
     return stats
 

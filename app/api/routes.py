@@ -36,6 +36,14 @@ from app.analytics.insights import generate_insights
 
 router = APIRouter()
 
+def check_user_rate_limit(username: str) -> bool:
+    key = f"ratelimit:{username}"
+    count = redis_client.get(key)
+    if count and int(count) >= 5:
+        return False
+    redis_client.incr(key)
+    redis_client.expire(key, 3600)
+    return True
 
 @router.get("/health")
 def health(db: Session = Depends(get_db)):
@@ -167,6 +175,11 @@ def analyze_user(
 ):
     import os
     github_token = os.getenv("GITHUB_TOKEN")
+    if not check_user_rate_limit(username):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Maximum 5 ingestions per hour."
+        )
 
     if not github_token:
         raise HTTPException(status_code=500, detail="GitHub token not configured")
