@@ -15,6 +15,7 @@ from app.services.ingest_github import ingest_user
 from app.cache.redis_client import redis_client
 import json
 import os 
+import sqlalchemy
 from app.database import get_db
 from app.models.user import User
 from app.services.ingest_github import ingest_user
@@ -38,23 +39,29 @@ router = APIRouter()
 
 
 @router.get("/health")
-def health():
-    return {"status": "GitSense AI is running"}
+def health(db: Session = Depends(get_db)):
+    health_status = {
+        "status": "ok",
+        "services": {}
+    }
 
+    # Check Database
+    try:
+        db.execute(sqlalchemy.text("SELECT 1"))
+        health_status["services"]["database"] = "healthy"
+    except Exception as e:
+        health_status["services"]["database"] = "unhealthy"
+        health_status["status"] = "degraded"
 
-def get_user_or_404(db: Session, username: str) -> User:
-    user = db.query(User).filter_by(
-        github_username=username
-    ).first()
+    # Check Redis
+    try:
+        redis_client.ping()
+        health_status["services"]["redis"] = "healthy"
+    except Exception as e:
+        health_status["services"]["redis"] = "unhealthy"
+        health_status["status"] = "degraded"
 
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found. Run ingestion first."
-        )
-
-    return user
-
+    return health_status
 
 @router.get("/summary/{username}")
 def summary(username: str, db: Session = Depends(get_db)):
